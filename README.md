@@ -41,6 +41,20 @@ It takes inspiration from systems like Frappe and Odoo, but follows a Go-first a
   - JSON
 - Soft delete support via `deleted_at`
 
+## Current UI Studio Direction
+
+The current frontend milestone is focused on making the shell feel more like a serious admin desk instead of a demo screen.
+
+Recent shell work is inspired by **Frappe Framework v16** workspace patterns, especially:
+
+- compact header height
+- focused search instead of oversized hero navigation
+- sidebar-first workspace navigation
+- clearer grouping for workspaces, modules, and recent doctypes
+- faster scanning with denser spacing and less visual noise
+
+This is a **reference study**, not a pixel clone. Gogal keeps its own React + Tailwind implementation and Go-first product direction.
+
 ## Project Structure
 
 ```text
@@ -168,6 +182,9 @@ This validates the app under `apps/sales/`, appends it to `sites/site1.local/sit
 - create records with a metadata-driven dynamic form
 - preview image-oriented fields directly in the form/detail experience
 - configure richer DocType behavior from the builder, including single/child-table flags and attachment-related metadata
+- use a compact workspace shell with a tighter header, narrower search, and denser sidebar navigation
+- switch between UI Studio workspaces and metadata-discovered modules from the sidebar
+- open a theme/layout editor to tune accent, density, text scale, and sidebar width
 - view query examples for each selected doctype
 
 ## Lightweight runtime setup
@@ -213,6 +230,7 @@ See `docs/fast-runtime-setup.md` for the detailed recommendation and sample conf
 - Role-based permissions and access control
 - Workflow engine
 - Background jobs and scheduler
+- Realtime desk polish for sidebar, header, and live workspace UX
 - React metadata form renderer
 - Admin studio for low-code / no-code app building
 - Reports, dashboards, and automation
@@ -220,4 +238,3 @@ See `docs/fast-runtime-setup.md` for the detailed recommendation and sample conf
 ## Status
 
 This repository is in active foundation phase, building toward a full enterprise framework for business app development in Go and JS.
-# gogal
