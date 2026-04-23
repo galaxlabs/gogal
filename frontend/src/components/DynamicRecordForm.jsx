@@ -1,7 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
 import ChildTableField from './ChildTableField.jsx';
 import LinkFieldInput from './LinkFieldInput.jsx';
-import { buildInitialValues, fieldInputType, getSelectChoices, isChildTableField, isEditableField, normalizeSubmissionValue } from '../lib/metadata.js';
+import {
+  buildInitialValues,
+  fieldInputType,
+  getSelectChoices,
+  isAttachmentField,
+  isChildTableField,
+  isEditableField,
+  isImageField,
+  normalizeSubmissionValue,
+  resolveFileURL,
+} from '../lib/metadata.js';
 
 export default function DynamicRecordForm({
 	docType,
@@ -133,6 +143,35 @@ export default function DynamicRecordForm({
           value={values[field.fieldname]}
           onChange={(nextValue) => handleChange(field.fieldname, nextValue)}
         />
+      ) : isAttachmentField(field) ? (
+      <div className="grid gap-3">
+        <input
+        className="field"
+        value={values[field.fieldname]}
+        onChange={(event) => handleChange(field.fieldname, event.target.value)}
+        placeholder={isImageField(field) ? 'Paste an image URL or /files/... path' : 'Paste a file URL or /files/... path'}
+        />
+        {values[field.fieldname] ? (
+        isImageField(field) ? (
+          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-3">
+          <img
+            src={resolveFileURL(values[field.fieldname])}
+            alt={field.label}
+            className="h-32 w-32 rounded-2xl object-cover ring-1 ring-white/10"
+          />
+          </div>
+        ) : (
+          <a
+          href={resolveFileURL(values[field.fieldname])}
+          target="_blank"
+          rel="noreferrer"
+          className="text-sm text-cyan-200 underline decoration-cyan-400/40 underline-offset-4"
+          >
+          Open attached file
+          </a>
+        )
+        ) : null}
+      </div>
       ) : field.fieldtype === 'Select' && getSelectChoices(field).length > 0 ? (
         <select
           className="field"

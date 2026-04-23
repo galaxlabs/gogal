@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createResource, deleteResource, fetchResource, fetchResources, updateResource } from '../lib/api.js';
 import DynamicRecordForm from './DynamicRecordForm.jsx';
-import { formatFieldValue } from '../lib/metadata.js';
+import { findDocTypeImageField, formatFieldValue, resolveFileURL } from '../lib/metadata.js';
 import RecordFieldValue from './RecordFieldValue.jsx';
 
 const operatorOptions = [
@@ -153,6 +153,14 @@ export default function ResourceWorkbench({ docType, loading }) {
     () => records.find((record) => record.name === selectedRecordName) || null,
     [records, selectedRecordName],
   );
+
+  const profileImageField = useMemo(() => findDocTypeImageField(docType), [docType]);
+  const profileImageURL = useMemo(() => {
+    if (!profileImageField || !selectedRecord) {
+      return '';
+    }
+    return resolveFileURL(selectedRecord[profileImageField.fieldname]);
+  }, [profileImageField, selectedRecord]);
 
   const handleCreate = async (payload) => {
     if (!docType) {
@@ -458,6 +466,18 @@ export default function ResourceWorkbench({ docType, loading }) {
           </div>
 
           <div className="panel p-5">
+      {profileImageURL ? (
+        <div className="mb-4 rounded-3xl border border-cyan-400/15 bg-cyan-500/10 p-4">
+        <div className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-100/80">Profile preview</div>
+        <div className="mt-3 flex items-center gap-4">
+          <img src={profileImageURL} alt={profileImageField?.label || docType.label} className="h-24 w-24 rounded-3xl object-cover ring-1 ring-white/10" />
+          <div>
+          <div className="text-sm font-semibold text-white">{profileImageField?.label || 'Image field'}</div>
+          <div className="mt-1 text-xs text-cyan-100/75">Driven from DocType `image_field` metadata, Frappe-style.</div>
+          </div>
+        </div>
+        </div>
+      ) : null}
             <div className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Version history & audit trail</div>
             <div className="mt-4 space-y-3">
             <div className="rounded-2xl border border-emerald-400/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">

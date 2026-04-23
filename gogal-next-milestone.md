@@ -3,6 +3,12 @@
 - Phase 1: Complete the current platform foundations
   - Focus: close the biggest gaps in the existing runtime so Gogal becomes coherent end-to-end before adding major new subsystems.
 
+  - Architecture note:
+    - the very first model must be a stronger `DocType` contract, because every later business object depends on it.
+    - `DocType` should carry Frappe-inspired but Go-native settings like `is_single`, `is_child_table`, `allow_rename`, `quick_entry`, `max_attachments`, and `image_field`.
+    - `UI Studio` should expose those settings directly while disabling invalid combinations such as `is_single + is_child_table`.
+    - attachment-aware field primitives (`Attach`, `Attach Image`, `Image`) should be treated as first-class metadata, not ad-hoc strings.
+
   - Milestone 1: Native child-table UX end-to-end
     - Priority: immediate
     - Estimated complexity: High

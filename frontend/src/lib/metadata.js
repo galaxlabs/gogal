@@ -1,4 +1,6 @@
 export const supportedFieldTypes = new Set([
+	'Attach',
+	'Attach Image',
   'Data',
   'Text',
   'Small Text',
@@ -15,7 +17,11 @@ export const supportedFieldTypes = new Set([
   'Select',
   'Link',
   'DynamicLink',
+	'Image',
 ]);
+
+const attachmentFieldTypes = new Set(['Attach', 'Attach Image', 'Image']);
+const imageFieldTypes = new Set(['Attach Image', 'Image']);
 
 const childTableFallback = {
 	mode: 'child-table',
@@ -99,6 +105,40 @@ export function isChildTableField(field) {
 
 export function isEditableField(field) {
 	return supportedFieldTypes.has(field.fieldtype) && !field.hidden;
+}
+
+export function isAttachmentField(field) {
+	return attachmentFieldTypes.has(field?.fieldtype);
+}
+
+export function isImageField(field) {
+	return imageFieldTypes.has(field?.fieldtype);
+}
+
+export function resolveFileURL(value) {
+	const raw = String(value || '').trim();
+	if (!raw) {
+		return '';
+	}
+
+	if (/^(https?:)?\/\//i.test(raw) || raw.startsWith('data:') || raw.startsWith('/')) {
+		return raw;
+	}
+
+	return raw;
+}
+
+export function findDocTypeImageField(docType) {
+	const fields = docType?.fields || [];
+	const explicitFieldName = String(docType?.image_field || '').trim();
+	if (explicitFieldName) {
+		const explicitField = fields.find((field) => field.fieldname === explicitFieldName);
+		if (explicitField && isImageField(explicitField)) {
+			return explicitField;
+		}
+	}
+
+	return fields.find((field) => isImageField(field)) || null;
 }
 
 export function defaultValueForField(field) {
@@ -273,6 +313,10 @@ export function formatFieldValue(field, value) {
 
 	if (field.fieldtype === 'Check') {
 		return value ? 'Enabled' : 'Disabled';
+	}
+
+	if (isAttachmentField(field)) {
+		return String(value);
 	}
 
 	if (field.fieldtype === 'JSON') {

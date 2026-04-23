@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   closestCenter,
   DndContext,
@@ -18,12 +18,12 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { childTableOptionsTemplate } from '../lib/metadata.js';
+import { childTableOptionsTemplate, isImageField } from '../lib/metadata.js';
 import { createDocType } from '../lib/api.js';
 
 const canvasDropZoneId = 'builder-canvas';
 
-const fieldTypeOptions = ['Data', 'Check', 'Int', 'Link', 'JSON'];
+const fieldTypeOptions = ['Data', 'Text', 'Check', 'Int', 'Float', 'Select', 'Link', 'Attach', 'Attach Image', 'Image', 'JSON'];
 
 const fieldPalette = [
   {
@@ -58,6 +58,22 @@ const fieldPalette = [
     description: 'Lookup another DocType and store a live relationship, similar to ERP-style links.',
     accent: 'cyan',
     options: 'doctype_name',
+  },
+  {
+    id: 'palette-attach',
+    title: 'Attach File',
+    fieldtype: 'Attach',
+    label: 'Attachment',
+    description: 'Store a file URL or uploaded file reference for contracts, PDFs, or supporting evidence.',
+    accent: 'violet',
+  },
+  {
+    id: 'palette-attach-image',
+    title: 'Attach Image',
+    fieldtype: 'Attach Image',
+    label: 'Profile Image',
+    description: 'Store an image path and surface it in form and sidebar previews like a profile or logo field.',
+    accent: 'emerald',
   },
   {
     id: 'palette-child-table',
@@ -177,13 +193,18 @@ function BaseSelect({ label, children, ...props }) {
   );
 }
 
-function ToggleCard({ label, description, checked, onChange }) {
+function ToggleCard({ label, description, checked, onChange, disabled = false }) {
   return (
     <button
       type="button"
+      disabled={disabled}
       onClick={() => onChange(!checked)}
       className={`flex items-start justify-between gap-4 rounded-2xl border px-4 py-3 text-left transition ${
-        checked ? 'border-cyan-400/30 bg-cyan-500/10' : 'border-white/10 bg-white/[0.03] hover:bg-white/[0.05]'
+        disabled
+          ? 'cursor-not-allowed border-white/10 bg-white/[0.02] opacity-60'
+          : checked
+            ? 'border-cyan-400/30 bg-cyan-500/10'
+            : 'border-white/10 bg-white/[0.03] hover:bg-white/[0.05]'
       }`}
     >
       <div>
@@ -286,6 +307,12 @@ export default function DocTypeBuilder({ moduleOptions = [], existingDocTypes = 
   const [label, setLabel] = useState('');
   const [moduleName, setModuleName] = useState('Core');
   const [description, setDescription] = useState('');
+  const [isSingle, setIsSingle] = useState(false);
+  const [isChildTable, setIsChildTable] = useState(false);
+  const [allowRename, setAllowRename] = useState(true);
+  const [quickEntry, setQuickEntry] = useState(false);
+  const [maxAttachments, setMaxAttachments] = useState('');
+  const [imageField, setImageField] = useState('');
   const [fields, setFields] = useState([]);
   const [selectedFieldId, setSelectedFieldId] = useState('');
   const [busy, setBusy] = useState(false);
@@ -299,6 +326,7 @@ export default function DocTypeBuilder({ moduleOptions = [], existingDocTypes = 
   );
 
   const availableModules = useMemo(() => ['Core', ...moduleOptions.filter((item) => item && item !== 'Core')], [moduleOptions]);
+  const availableImageFields = useMemo(() => fields.filter((field) => isImageField(field)), [fields]);
 
   const selectedField = useMemo(
     () => fields.find((field) => field.id === selectedFieldId) || fields[0] || null,
@@ -311,10 +339,27 @@ export default function DocTypeBuilder({ moduleOptions = [], existingDocTypes = 
       label: label || doctype,
       module: moduleName,
       description,
+      is_single: isSingle,
+      is_child_table: isChildTable,
+      allow_rename: allowRename,
+      quick_entry: isSingle || isChildTable ? false : quickEntry,
+      max_attachments: maxAttachments === '' ? 0 : Number(maxAttachments),
+      image_field: imageField || undefined,
       fields: fields.map((field, index) => normalizeFieldPayload(field, index)),
     }),
-    [description, doctype, fields, label, moduleName],
+    [allowRename, description, doctype, fields, imageField, isChildTable, isSingle, label, maxAttachments, moduleName, quickEntry],
   );
+
+  useEffect(() => {
+    if (!imageField) {
+      return;
+    }
+
+    const stillExists = availableImageFields.some((field) => field.fieldname === imageField);
+    if (!stillExists) {
+      setImageField('');
+    }
+  }, [availableImageFields, imageField]);
 
   const activePalette = fieldPalette.find((item) => item.id === activeDragId);
 
@@ -344,6 +389,12 @@ export default function DocTypeBuilder({ moduleOptions = [], existingDocTypes = 
     setLabel('');
     setModuleName('Core');
     setDescription('');
+    setIsSingle(false);
+    setIsChildTable(false);
+    setAllowRename(true);
+    setQuickEntry(false);
+    setMaxAttachments('');
+    setImageField('');
     setFields([]);
     setSelectedFieldId('');
     setError('');
@@ -431,6 +482,12 @@ export default function DocTypeBuilder({ moduleOptions = [], existingDocTypes = 
         label: label.trim() || normalizedDocType,
         module: moduleName,
         description,
+        is_single: isSingle,
+        is_child_table: isChildTable,
+        allow_rename: allowRename,
+        quick_entry: isSingle || isChildTable ? false : quickEntry,
+        max_attachments: maxAttachments === '' ? 0 : Number(maxAttachments),
+        image_field: imageField || '',
         fields: filteredFields,
       };
 
@@ -453,7 +510,7 @@ export default function DocTypeBuilder({ moduleOptions = [], existingDocTypes = 
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
             <div className="mb-2 flex flex-wrap gap-2">
-              <span className="badge">Visual Studio</span>
+              <span className="badge">UI Studio</span>
               <span className="badge">Metadata-first</span>
               <span className="badge">POST /api/doctypes</span>
             </div>
@@ -511,6 +568,61 @@ export default function DocTypeBuilder({ moduleOptions = [], existingDocTypes = 
                 onChange={(event) => setDescription(event.target.value)}
                 placeholder="What workflow or business object does this DocType represent?"
               />
+              <div className="grid gap-3">
+                <ToggleCard
+                  label="Is Single"
+                  description="Create a singleton settings-style DocType. The builder disables conflicting options now so the runtime can support single CRUD cleanly next."
+                  checked={isSingle}
+                  onChange={(value) => {
+                    setIsSingle(value);
+                    if (value) {
+                      setIsChildTable(false);
+                      setQuickEntry(false);
+                    }
+                  }}
+                />
+                <ToggleCard
+                  label="Is Child Table"
+                  description="Use this DocType as nested rows inside a parent document through a Table field, Frappe-style but with explicit Go runtime constraints."
+                  checked={isChildTable}
+                  onChange={(value) => {
+                    setIsChildTable(value);
+                    if (value) {
+                      setIsSingle(false);
+                      setQuickEntry(false);
+                    }
+                  }}
+                  disabled={isSingle}
+                />
+                <ToggleCard
+                  label="Allow Rename"
+                  description="Prepare this DocType for future rename support without changing the schema contract later."
+                  checked={allowRename}
+                  onChange={setAllowRename}
+                />
+                <ToggleCard
+                  label="Quick Entry"
+                  description="Reserve a compact create flow for normal doctypes. This stays disabled for single and child-table doctypes."
+                  checked={isSingle || isChildTable ? false : quickEntry}
+                  onChange={setQuickEntry}
+                  disabled={isSingle || isChildTable}
+                />
+              </div>
+              <BaseInput
+                label="Max attachments"
+                type="number"
+                min="0"
+                value={maxAttachments}
+                onChange={(event) => setMaxAttachments(event.target.value)}
+                placeholder="0"
+                hint="Use 0 when you do not want to enforce a limit yet."
+              />
+              <BaseSelect label="Image field" value={imageField} onChange={(event) => setImageField(event.target.value)}>
+                <option value="">No profile/sidebar image</option>
+                {availableImageFields.map((fieldOption) => (
+                  <option key={fieldOption.id} value={fieldOption.fieldname}>{fieldOption.label} ({fieldOption.fieldname})</option>
+                ))}
+              </BaseSelect>
             </div>
           </div>
         </div>
@@ -544,10 +656,10 @@ export default function DocTypeBuilder({ moduleOptions = [], existingDocTypes = 
                   <div className="rounded-full border border-cyan-400/20 bg-cyan-500/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.24em] text-cyan-100">
                     Drop zone ready
                   </div>
-                  <h4 className="mt-4 text-xl font-semibold text-white">Drag Data, Check, Int, Link, or Child Table into this canvas</h4>
-          <p className="mt-3 max-w-xl text-sm leading-6 text-slate-400">
-          This builder now supports live Link fields and JSON-backed child tables, which gives Gogal a real business-document feel while native nested storage continues evolving on the backend.
-          </p>
+                  <h4 className="mt-4 text-xl font-semibold text-white">Drag fields into this canvas to shape your DocType</h4>
+                  <p className="mt-3 max-w-xl text-sm leading-6 text-slate-400">
+                    This builder now supports link, file, and image-focused fields while Gogal closes the remaining gaps to a fuller Frappe-style metadata model.
+                  </p>
                 </div>
               ) : (
                 <SortableContext items={fields.map((field) => field.id)} strategy={verticalListSortingStrategy}>

@@ -83,7 +83,7 @@ func CoerceFieldValue(field DocField, value any) (any, error) {
 	}
 
 	switch field.FieldType {
-	case "Data", "Text", "Small Text", "Long Text", "Select", "Link", "DynamicLink":
+	case "Attach", "Attach Image", "Data", "DynamicLink", "Image", "Link", "Long Text", "Select", "Small Text", "Text":
 		return strings.TrimSpace(fmt.Sprint(value)), nil
 	case "Check":
 		return coerceBool(value)
@@ -180,7 +180,7 @@ func SearchableColumns(docType *DocType) []string {
 
 func IsTextLikeFieldType(fieldType string) bool {
 	switch fieldType {
-	case "Data", "Text", "Small Text", "Long Text", "Select", "Link", "DynamicLink":
+	case "Attach", "Attach Image", "Data", "DynamicLink", "Image", "Link", "Long Text", "Select", "Small Text", "Text":
 		return true
 	default:
 		return false

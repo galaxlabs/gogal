@@ -1,4 +1,4 @@
-- Repo `/home/fg/gogal-framework` is the `gogal` platform: a Gin + GORM + PostgreSQL metadata-driven business framework with a React/Vite frontend named `Studio`.
+- Repo `/home/fg/gogal-framework` is the `gogal` platform: a Gin + GORM + PostgreSQL metadata-driven business framework with a React/Vite frontend named `UI Studio`.
 - Go module renamed to `gogal`; main repo is pushed to `https://github.com/galaxlabs/gogal.git` on branch `main`.
 - Core metadata engine is centered on `DocType` and `DocField` in `models/doctype.go`.
 - Metadata tables are `tab_doctypes` and `tab_docfields`; user-defined doctypes create PostgreSQL storage tables like `tab_customer`.
@@ -21,9 +21,9 @@
 - DB bootstrap in `config/db.go` loads `.env` with `godotenv`, falls back to defaults, and auto-migrates `DocType`, `DocField`, and `File`.
 - Verified DB fix history: initial migration failed with `permission denied for schema public`, then succeeded after granting the app user schema privileges.
 - Backend welcome route now responds with `Welcome to Gogal API`.
-- React + Vite + Tailwind frontend lives in `frontend/` and is branded as `Studio`.
+- React + Vite + Tailwind frontend lives in `frontend/` and is branded as `UI Studio`.
 - Frontend dev server defaults to port `5173` and proxies `/api` to `http://127.0.0.1:8080`.
-- `frontend/src/App.jsx` now provides the Studio shell with dynamic module navigation, tenant branding, global search, timezone display, and roadmap panels.
+- `frontend/src/App.jsx` now provides the UI Studio shell with dynamic module navigation, tenant branding, global search, timezone display, and roadmap panels.
 - `frontend/src/components/DocTypeBuilder.jsx` is a drag-and-drop builder using `@dnd-kit/core`, `@dnd-kit/sortable`, and `@dnd-kit/utilities`.
 - Builder supports field palette + sortable canvas + property editor + payload preview + `POST /api/doctypes` save flow.
 - `frontend/src/components/ResourceWorkbench.jsx` provides a metadata-driven desk with live search/filter/sort, list/detail layout, create/edit/delete flows, and detail cards.
@@ -31,7 +31,7 @@
 - Shared frontend metadata helpers live in `frontend/src/lib/metadata.js`.
 - Link-field frontend UX lives in `frontend/src/components/LinkFieldInput.jsx` and now uses `/api/resource/:doctype/link-search` instead of generic listing.
 - Child-table frontend UX exists via `frontend/src/components/ChildTableField.jsx` and `RecordFieldValue.jsx`; current UI supports JSON-backed child-table rendering while native backend table persistence is now in place server-side.
-- Frontend package name was renamed to `studio`; visible branding was updated from `Gogal Framework Studio` / `Gogal Studio` to `Studio`.
+- Frontend package name remains `studio`; visible branding is moving from older `Gogal Framework Studio` / `Gogal Studio` wording to `UI Studio`.
 - CLI foundation lives under `cmd/gogal/` and uses Cobra.
 - `gogal init [bench-name]` scaffolds a bench with `apps/`, `sites/`, `config/`, `www/`, `storage/public`, `storage/private`, and `config/traefik/dynamic`.
 - `sites/common_site_config.json` now carries DB/Redis/base-port plus reverse-proxy settings like `reverse_proxy`, `wildcard_base_domain`, and `traefik_dynamic_dir`.
@@ -52,5 +52,5 @@
 - Verified on 2026-04-23: `new-site` is idempotent with `--skip-db-setup --no-input` and preserves generated site config values across reruns.
 - Verified on 2026-04-23: `install-app` is idempotent and keeps exactly one app entry in both `installed_apps` and `apps.txt`.
 - Verified earlier on 2026-04-23: browser/UI flow loaded metadata and records successfully, and the visual DocType Builder created a doctype from the Studio UI.
-- Current platform state: metadata engine, resource CRUD, filter/search/sort, Studio shell, visual builder, desk UI, bench/site/app/install CLI, link validation/search foundation, file upload foundation, website/domain scaffolding, and backend child-table persistence foundation are all implemented.
+- Current platform state: metadata engine, resource CRUD, filter/search/sort, UI Studio shell, visual builder, desk UI, bench/site/app/install CLI, link validation/search foundation, file upload foundation, website/domain scaffolding, and backend child-table persistence foundation are all implemented.
 

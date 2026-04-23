@@ -21,52 +21,63 @@ var reservedColumnNames = map[string]struct{}{
 }
 
 var supportedFieldTypes = map[string]string{
-	"Check":       "BOOLEAN",
-	"Currency":    "NUMERIC(18,6)",
-	"Data":        "TEXT",
-	"Date":        "DATE",
-	"Datetime":    "TIMESTAMPTZ",
-	"DynamicLink": "TEXT",
-	"Float":       "NUMERIC(18,6)",
-	"Int":         "INTEGER",
-	"JSON":        "JSONB",
-	"Link":        "TEXT",
-	"Long Text":   "TEXT",
-	"Percent":     "NUMERIC(8,4)",
-	"Select":      "TEXT",
-	"Small Text":  "TEXT",
-	"Table":       "",
-	"Text":        "TEXT",
-	"Time":        "TIME",
+	"Attach":       "TEXT",
+	"Attach Image": "TEXT",
+	"Check":        "BOOLEAN",
+	"Currency":     "NUMERIC(18,6)",
+	"Data":         "TEXT",
+	"Date":         "DATE",
+	"Datetime":     "TIMESTAMPTZ",
+	"DynamicLink":  "TEXT",
+	"Float":        "NUMERIC(18,6)",
+	"Image":        "TEXT",
+	"Int":          "INTEGER",
+	"JSON":         "JSONB",
+	"Link":         "TEXT",
+	"Long Text":    "TEXT",
+	"Percent":      "NUMERIC(8,4)",
+	"Select":       "TEXT",
+	"Small Text":   "TEXT",
+	"Table":        "",
+	"Text":         "TEXT",
+	"Time":         "TIME",
 }
 
 type CreateDocTypeRequest struct {
-	Name         string     `json:"doctype" binding:"required"`
-	Label        string     `json:"label"`
-	Module       string     `json:"module"`
-	TableName    string     `json:"table_name"`
-	Description  string     `json:"description"`
-	IsSingle     bool       `json:"is_single"`
-	IsChildTable bool       `json:"is_child_table"`
-	TrackChanges *bool      `json:"track_changes"`
-	Fields       []DocField `json:"fields" binding:"required"`
+	Name           string     `json:"doctype" binding:"required"`
+	Label          string     `json:"label"`
+	Module         string     `json:"module"`
+	TableName      string     `json:"table_name"`
+	Description    string     `json:"description"`
+	IsSingle       bool       `json:"is_single"`
+	IsChildTable   bool       `json:"is_child_table"`
+	TrackChanges   *bool      `json:"track_changes"`
+	AllowRename    *bool      `json:"allow_rename"`
+	QuickEntry     *bool      `json:"quick_entry"`
+	MaxAttachments *int       `json:"max_attachments"`
+	ImageField     string     `json:"image_field"`
+	Fields         []DocField `json:"fields" binding:"required"`
 }
 
 type DocType struct {
-	ID           uint           `gorm:"primaryKey" json:"id"`
-	CreatedAt    time.Time      `json:"created_at"`
-	UpdatedAt    time.Time      `json:"updated_at"`
-	DeletedAt    gorm.DeletedAt `gorm:"index" json:"-"`
-	Name         string         `gorm:"size:140;not null;uniqueIndex" json:"doctype"`
-	Label        string         `gorm:"size:140;not null" json:"label"`
-	Module       string         `gorm:"size:140;not null;default:'Core'" json:"module"`
-	StorageTable string         `gorm:"column:table_name;size:140;not null;uniqueIndex" json:"table_name"`
-	Description  string         `gorm:"type:text" json:"description,omitempty"`
-	IsSingle     bool           `gorm:"default:false" json:"is_single"`
-	IsChildTable bool           `gorm:"column:is_child_table;default:false" json:"is_child_table"`
-	IsSystem     bool           `gorm:"default:false" json:"is_system"`
-	TrackChanges bool           `gorm:"default:true" json:"track_changes"`
-	Fields       []DocField     `gorm:"foreignKey:DocTypeID;constraint:OnDelete:CASCADE" json:"fields"`
+	ID             uint           `gorm:"primaryKey" json:"id"`
+	CreatedAt      time.Time      `json:"created_at"`
+	UpdatedAt      time.Time      `json:"updated_at"`
+	DeletedAt      gorm.DeletedAt `gorm:"index" json:"-"`
+	Name           string         `gorm:"size:140;not null;uniqueIndex" json:"doctype"`
+	Label          string         `gorm:"size:140;not null" json:"label"`
+	Module         string         `gorm:"size:140;not null;default:'Core'" json:"module"`
+	StorageTable   string         `gorm:"column:table_name;size:140;not null;uniqueIndex" json:"table_name"`
+	Description    string         `gorm:"type:text" json:"description,omitempty"`
+	IsSingle       bool           `gorm:"default:false" json:"is_single"`
+	IsChildTable   bool           `gorm:"column:is_child_table;default:false" json:"is_child_table"`
+	IsSystem       bool           `gorm:"default:false" json:"is_system"`
+	TrackChanges   bool           `gorm:"default:true" json:"track_changes"`
+	AllowRename    bool           `gorm:"default:true" json:"allow_rename"`
+	QuickEntry     bool           `gorm:"default:false" json:"quick_entry"`
+	MaxAttachments int            `gorm:"default:0" json:"max_attachments"`
+	ImageField     string         `gorm:"size:140" json:"image_field,omitempty"`
+	Fields         []DocField     `gorm:"foreignKey:DocTypeID;constraint:OnDelete:CASCADE" json:"fields"`
 }
 
 type DocField struct {
@@ -111,16 +122,35 @@ func NewDocTypeFromRequest(req CreateDocTypeRequest) (*DocType, error) {
 		trackChanges = *req.TrackChanges
 	}
 
+	allowRename := true
+	if req.AllowRename != nil {
+		allowRename = *req.AllowRename
+	}
+
+	quickEntry := false
+	if req.QuickEntry != nil {
+		quickEntry = *req.QuickEntry
+	}
+
+	maxAttachments := 0
+	if req.MaxAttachments != nil {
+		maxAttachments = *req.MaxAttachments
+	}
+
 	docType := &DocType{
-		Name:         strings.TrimSpace(req.Name),
-		Label:        strings.TrimSpace(req.Label),
-		Module:       strings.TrimSpace(req.Module),
-		StorageTable: strings.TrimSpace(req.TableName),
-		Description:  strings.TrimSpace(req.Description),
-		IsSingle:     req.IsSingle,
-		IsChildTable: req.IsChildTable,
-		TrackChanges: trackChanges,
-		Fields:       req.Fields,
+		Name:           strings.TrimSpace(req.Name),
+		Label:          strings.TrimSpace(req.Label),
+		Module:         strings.TrimSpace(req.Module),
+		StorageTable:   strings.TrimSpace(req.TableName),
+		Description:    strings.TrimSpace(req.Description),
+		IsSingle:       req.IsSingle,
+		IsChildTable:   req.IsChildTable,
+		TrackChanges:   trackChanges,
+		AllowRename:    allowRename,
+		QuickEntry:     quickEntry,
+		MaxAttachments: maxAttachments,
+		ImageField:     NormalizeIdentifier(req.ImageField),
+		Fields:         req.Fields,
 	}
 
 	if err := docType.Normalize(); err != nil {
@@ -136,6 +166,7 @@ func (d *DocType) Normalize() error {
 	d.Module = strings.TrimSpace(d.Module)
 	d.StorageTable = strings.TrimSpace(d.StorageTable)
 	d.Description = strings.TrimSpace(d.Description)
+	d.ImageField = NormalizeIdentifier(d.ImageField)
 
 	if d.Name == "" {
 		return fmt.Errorf("doctype name is required")
@@ -143,6 +174,18 @@ func (d *DocType) Normalize() error {
 
 	if d.IsSingle && d.IsChildTable {
 		return fmt.Errorf("a doctype cannot be both single and child table")
+	}
+
+	if d.MaxAttachments < 0 {
+		return fmt.Errorf("max_attachments cannot be negative")
+	}
+
+	if d.IsSingle {
+		d.QuickEntry = false
+	}
+
+	if d.IsChildTable {
+		d.QuickEntry = false
 	}
 
 	if d.Label == "" {
@@ -164,6 +207,7 @@ func (d *DocType) Normalize() error {
 	}
 
 	seenFields := make(map[string]struct{}, len(d.Fields))
+	imageFieldValid := d.ImageField == ""
 	for index := range d.Fields {
 		field := &d.Fields[index]
 		field.SortOrder = index + 1
@@ -187,10 +231,21 @@ func (d *DocType) Normalize() error {
 		}
 
 		seenFields[field.FieldName] = struct{}{}
+
+		if d.ImageField != "" && field.FieldName == d.ImageField {
+			if field.FieldType != "Attach Image" && field.FieldType != "Image" {
+				return fmt.Errorf("image_field %q must reference a field of type Attach Image or Image", d.ImageField)
+			}
+			imageFieldValid = true
+		}
 	}
 
 	if err := ValidateIdentifier(d.StorageTable); err != nil {
 		return fmt.Errorf("invalid table_name: %w", err)
+	}
+
+	if !imageFieldValid {
+		return fmt.Errorf("image_field %q does not exist in the DocType field list", d.ImageField)
 	}
 
 	return nil
@@ -333,6 +388,10 @@ func SystemDocTypes() []DocType {
 				{FieldName: "is_child_table", Label: "Is Child Table", FieldType: "Check"},
 				{FieldName: "is_system", Label: "Is System", FieldType: "Check"},
 				{FieldName: "track_changes", Label: "Track Changes", FieldType: "Check"},
+				{FieldName: "allow_rename", Label: "Allow Rename", FieldType: "Check"},
+				{FieldName: "quick_entry", Label: "Quick Entry", FieldType: "Check"},
+				{FieldName: "max_attachments", Label: "Max Attachments", FieldType: "Int"},
+				{FieldName: "image_field", Label: "Image Field", FieldType: "Data"},
 			},
 		},
 		{

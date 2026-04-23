@@ -43,6 +43,21 @@ Metadata defines:
 - permissions
 - automation
 
+The first-class metadata contract must be rich enough for one `DocType` to create many more safely. That means Gogal's `DocType` object should own structural settings like:
+
+- `is_single`
+- `is_child_table`
+- `allow_rename`
+- `quick_entry`
+- `max_attachments`
+- `image_field`
+
+and field primitives like:
+
+- `Attach`
+- `Attach Image`
+- `Image`
+
 ### 2. Batteries Included
 
 A production-ready platform should ship with:
@@ -186,6 +201,8 @@ React-based builder for:
 - dashboard builder
 - report builder
 - app settings
+
+This surface should be branded as **UI Studio**: the metadata-first frontend for Gogal builders, admins, and operators.
 
 ### Runtime Renderer
 
@@ -443,11 +460,12 @@ The most valuable next implementation steps are:
 1. server-side filter/search/sort for dynamic resources
 2. link fields and foreign-key style validation
 3. child table metadata and nested document saving
-4. authentication, users, roles, and permissions
-5. React admin studio skeleton
-6. metadata-driven form renderer contract
-7. audit trail and activity log
-8. workflow engine
+4. richer doctype metadata including attachment/image semantics and single/child-table UX rules
+5. authentication, users, roles, and permissions
+6. React admin UI Studio skeleton
+7. metadata-driven form renderer contract
+8. audit trail and activity log
+9. workflow engine
 
 ---
 

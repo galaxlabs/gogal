@@ -1,15 +1,15 @@
 - Finished
   - Metadata-driven core with `DocType` + `DocField`, generated PostgreSQL tables, metadata APIs, and dynamic resource CRUD.
   - Query layer with search, sorting, and metadata-aware filters.
-  - Studio frontend shell with live DocType navigation, visual builder, and metadata-driven record desk.
+  - UI Studio frontend shell with live DocType navigation, visual builder, and metadata-driven record desk.
   - Drag-and-drop DocType Builder with payload preview and save flow.
-  - Record create/edit/delete flows in Studio with live detail desk.
+  - Record create/edit/delete flows in UI Studio with live detail desk.
   - CLI foundation with `gogal init`, `new-site`, `new-app`, and `install-app`.
   - Bench/site/app scaffolding including `www/`, storage folders, public/private files, and Traefik-oriented config placeholders.
   - Backend child-table foundation with `is_child_table`, `Table` metadata support, transactional child-row save/hydrate/delete logic.
   - Link validation and dedicated `/api/resource/:doctype/link-search` endpoint.
   - File upload foundation with metadata model, upload/list APIs, public static file serving, and attribute storage.
-  - Rename baseline completed: Go module is `gogal`, frontend package is `studio`, and visible UI branding is mostly `Studio`.
+  - Rename baseline completed: Go module is `gogal`, frontend package is `studio`, and visible UI branding is moving to `UI Studio`.
   - Verified builds: `go build ./...`, `go build ./cmd/gogal`, `npm run build`, and CLI smoke tests.
 
 - Partially finished

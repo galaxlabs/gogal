@@ -38,7 +38,7 @@ const platformModules = [
 
 const roadmapCards = [
   {
-    title: 'Print & Reporting Studio',
+    title: 'Print & Reporting UI Studio',
     detail: 'Letterheads, invoices, charts, dashboards, and export-ready report surfaces.',
   },
   {
@@ -280,10 +280,10 @@ export default function App() {
                 GG
               </div>
               <div>
-                <div className="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-200/80">Studio</div>
+                <div className="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-200/80">UI Studio</div>
                 <h1 className="mt-2 text-2xl font-semibold text-white">{tenantName}</h1>
                 <p className="mt-2 text-sm leading-6 text-slate-400">
-                  Headless app builder, admin desk, automation cockpit, and metadata-first control center.
+                  Headless app builder, admin desk, automation cockpit, and metadata-first control center for Gogal.
                 </p>
               </div>
             </div>
@@ -292,7 +292,7 @@ export default function App() {
           <div className="mt-5 space-y-5">
             <div>
               <div className="mb-3 flex items-center justify-between">
-                <div className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Studio modules</div>
+                <div className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">UI Studio modules</div>
                 <span className="badge">{platformModules.length + installedModules.length} total</span>
               </div>
               <div className="space-y-3">
@@ -365,7 +365,7 @@ export default function App() {
                   <span className="badge">Touch friendly</span>
                   <span className="badge">Animated surfaces</span>
                 </div>
-                <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white">Studio — App Builder & Admin Desk</h2>
+                <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white">UI Studio — App Builder & Admin Desk</h2>
                 <p className="mt-2 max-w-3xl text-sm text-slate-400">
                   Build metadata visually, prepare automation-ready modules, and shape an enterprise desk that can outgrow ERP-era admin UX.
                 </p>
@@ -413,7 +413,7 @@ export default function App() {
               ) : null}
 
               <div className="grid gap-4 md:grid-cols-3">
-                <StatusCard title="Studio readiness" accent="emerald">
+                <StatusCard title="UI Studio readiness" accent="emerald">
                   <div className="text-3xl font-semibold text-white">{docTypes.length}</div>
                   <p className="mt-2 text-sm leading-6 text-slate-300">DocTypes available to drive metadata-first forms, lists, and desk navigation.</p>
                 </StatusCard>

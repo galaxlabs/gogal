@@ -16,12 +16,13 @@ It takes inspiration from systems like Frappe and Odoo, but follows a Go-first a
 
 - **Backend:** Go + Gin + GORM
 - **Database:** PostgreSQL
-- **Frontend:** React + Tailwind CSS (live studio scaffold under `frontend/`)
+- **Frontend:** React + Tailwind CSS (`UI Studio` under `frontend/`)
 - **Architecture:** Metadata-driven MVC
 
 ## Current Features
 
 - Metadata engine for `DocType` and `DocField`
+- Richer `DocType` settings for `is_single`, `is_child_table`, `allow_rename`, `quick_entry`, `max_attachments`, and `image_field`
 - Automatic PostgreSQL table generation for non-single doctypes
 - Cobra CLI for bench management and scaffolding
 - Seeded system doctypes:
@@ -29,6 +30,7 @@ It takes inspiration from systems like Frappe and Odoo, but follows a Go-first a
   - `DocField`
 - Dynamic REST CRUD for records created from metadata
 - Field-type-aware payload coercion for:
+  - Attach / Attach Image / Image
   - Data/Text
   - Check
   - Int
@@ -104,7 +106,7 @@ The API starts on:
 
 - `http://127.0.0.1:8080`
 
-### Run the React studio
+### Run the React UI Studio
 
 In a second terminal:
 
@@ -164,6 +166,8 @@ This validates the app under `apps/sales/`, appends it to `sites/site1.local/sit
 - inspect metadata and field definitions
 - search, sort, and filter live records
 - create records with a metadata-driven dynamic form
+- preview image-oriented fields directly in the form/detail experience
+- configure richer DocType behavior from the builder, including single/child-table flags and attachment-related metadata
 - view query examples for each selected doctype
 
 ## Example: Create a DocType
@@ -192,6 +196,7 @@ This validates the app under `apps/sales/`, appends it to `sites/site1.local/sit
 ## Roadmap
 
 - Single DocType storage model
+- Single DocType runtime CRUD support
 - Role-based permissions and access control
 - Workflow engine
 - Background jobs and scheduler
