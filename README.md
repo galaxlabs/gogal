@@ -156,9 +156,7 @@ go run ./cmd/gogal new-site site1.local --bench ./my-bench --skip-db-setup --no-
 go run ./cmd/gogal install-app sales --bench ./my-bench --site site1.local
 ```
 
-This updates the site's `site_config.json` with an `installed_apps` list and writes a per-site registry entry under `sites/<site>/apps/` so installed app state is explicit and inspectable.
-
-At the current foundation stage, `install-app` registers the app on the site and persists installation metadata. Automatic DocType import, migrations, and hook execution will be layered in next.
+This validates the app under `apps/sales/`, appends it to `sites/site1.local/site_config.json`, and maintains `sites/site1.local/apps.txt` as an install registry.
 
 ### Current frontend capabilities
 

@@ -342,7 +342,7 @@ func mergeSiteConfig(target, existing *siteConfig) {
 		target.DBPort = existing.DBPort
 	}
 	if len(existing.InstalledApps) > 0 {
-		target.InstalledApps = normalizeUniqueStrings(existing.InstalledApps)
+		target.InstalledApps = appendUniquePreserveOrder(target.InstalledApps, existing.InstalledApps...)
 	}
 }
 
