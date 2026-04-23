@@ -1,4 +1,4 @@
-export default function DocTypeSidebar({ docTypes, loading, selectedName, onSelect, onRefresh }) {
+export default function DocTypeSidebar({ docTypes, loading, selectedName, onSelect, onRefresh, onCreate }) {
   return (
     <aside className="panel flex min-h-[70vh] flex-col overflow-hidden">
       <div className="border-b border-white/10 p-5">
@@ -7,13 +7,22 @@ export default function DocTypeSidebar({ docTypes, loading, selectedName, onSele
             <h2 className="text-lg font-semibold text-white">DocTypes</h2>
             <p className="mt-1 text-sm text-slate-400">Pick a model to inspect and edit live data.</p>
           </div>
-          <button
-            type="button"
-            onClick={onRefresh}
-            className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-slate-200 transition hover:bg-white/10"
-          >
-            Refresh
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onCreate}
+              className="rounded-xl bg-cyan-500 px-3 py-2 text-xs font-semibold text-slate-950 transition hover:bg-cyan-400"
+            >
+              New
+            </button>
+            <button
+              type="button"
+              onClick={onRefresh}
+              className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-slate-200 transition hover:bg-white/10"
+            >
+              Refresh
+            </button>
+          </div>
         </div>
       </div>
 

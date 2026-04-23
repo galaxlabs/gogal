@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { fetchDocTypes, fetchDocTypeMeta } from './lib/api.js';
 import DocTypeSidebar from './components/DocTypeSidebar.jsx';
+import DocTypeBuilder from './components/DocTypeBuilder.jsx';
 
 const MetadataPanel = lazy(() => import('./components/MetadataPanel.jsx'));
 const ResourceWorkbench = lazy(() => import('./components/ResourceWorkbench.jsx'));
@@ -13,6 +14,9 @@ export default function App() {
   const [metaLoading, setMetaLoading] = useState(false);
   const [error, setError] = useState('');
   const [refreshKey, setRefreshKey] = useState(0);
+  const [builderOpen, setBuilderOpen] = useState(false);
+
+  const triggerRefresh = () => setRefreshKey((current) => current + 1);
 
   useEffect(() => {
     let active = true;
@@ -115,7 +119,8 @@ export default function App() {
             loading={loading}
             selectedName={selectedName}
             onSelect={setSelectedName}
-            onRefresh={() => setRefreshKey((current) => current + 1)}
+            onRefresh={triggerRefresh}
+            onCreate={() => setBuilderOpen(true)}
           />
 
           <Suspense fallback={<div className="panel p-6 text-sm text-slate-300">Loading live workspace…</div>}>
@@ -123,7 +128,6 @@ export default function App() {
               key={selectedName}
               docType={selectedMeta}
               loading={metaLoading}
-              onMetaRefresh={() => setSelectedName((current) => `${current}`)}
             />
           </Suspense>
 
@@ -132,6 +136,15 @@ export default function App() {
           </Suspense>
         </div>
       </div>
+
+      <DocTypeBuilder
+        open={builderOpen}
+        onClose={() => setBuilderOpen(false)}
+        onCreated={(name) => {
+          setSelectedName(name);
+          triggerRefresh();
+        }}
+      />
     </div>
   );
 }

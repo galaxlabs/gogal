@@ -30,6 +30,14 @@ export async function fetchDocTypeMeta(name) {
   return payload.data;
 }
 
+export async function createDocType(document) {
+  const payload = await request('/api/doctypes', {
+    method: 'POST',
+    body: JSON.stringify(document),
+  });
+  return payload.data;
+}
+
 export async function fetchResources(doctype, query = {}) {
   const params = new URLSearchParams();
   Object.entries(query).forEach(([key, value]) => {
