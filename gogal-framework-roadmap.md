@@ -1,0 +1,34 @@
+- Finished
+  - Metadata-driven core with `DocType` + `DocField`, generated PostgreSQL tables, metadata APIs, and dynamic resource CRUD.
+  - Query layer with search, sorting, and metadata-aware filters.
+  - Studio frontend shell with live DocType navigation, visual builder, and metadata-driven record desk.
+  - Drag-and-drop DocType Builder with payload preview and save flow.
+  - Record create/edit/delete flows in Studio with live detail desk.
+  - CLI foundation with `gogal init`, `new-site`, `new-app`, and `install-app`.
+  - Bench/site/app scaffolding including `www/`, storage folders, public/private files, and Traefik-oriented config placeholders.
+  - Backend child-table foundation with `is_child_table`, `Table` metadata support, transactional child-row save/hydrate/delete logic.
+  - Link validation and dedicated `/api/resource/:doctype/link-search` endpoint.
+  - File upload foundation with metadata model, upload/list APIs, public static file serving, and attribute storage.
+  - Rename baseline completed: Go module is `gogal`, frontend package is `studio`, and visible UI branding is mostly `Studio`.
+  - Verified builds: `go build ./...`, `go build ./cmd/gogal`, `npm run build`, and CLI smoke tests.
+
+- Partially finished
+  - Native child-table UX in Studio is only partially aligned with backend: frontend still primarily uses JSON-backed child-table rendering patterns.
+  - Link-field UX is wired to backend link search, but deeper behaviors like richer labels, create-new-linked-record, and advanced query rules are not built yet.
+  - File uploads have backend foundations, but no full Studio file manager, attachment browser, or end-to-end publish workflow yet.
+  - Website/domain ecosystem scaffolding exists, but automatic website generation, wildcard routing orchestration, and production-grade publish flow are still partial.
+  - Rename cleanup is mostly complete, but docs and older references may still need occasional polishing.
+  - `install-app` currently handles registration only; app migrations, DocType import, fixtures, hooks, and lifecycle execution are deferred.
+  - Studio roadmap panels exist for automation, scheduler, reporting, QR/barcode, and timezone tools, but these are placeholders rather than full modules.
+
+- Should be built next
+  - Finish native `Table` field support in Studio so frontend forms/lists/editors use backend child-table doctypes directly instead of JSON-mode stopgaps.
+  - Build app installation lifecycle: import DocTypes, run migrations, sync fixtures, and execute app hooks during `install-app`.
+  - Add auth, users, roles, permissions, and route protection across API and Studio.
+  - Build workflow engine primitives: states, transitions, approvals, assignment, and automation triggers.
+  - Create a proper file manager and attachment UI in Studio, including doc attachments, previews, private/public handling, and metadata editing.
+  - Build website publishing pipeline: app/site `www` management, domain mapping, wildcard subdomain generation, and Traefik output generation for production use.
+  - Add report/dashboard/page builders so the platform moves beyond DocTypes into a fuller ERP/admin ecosystem.
+  - Add testing coverage for child-table persistence, link validation/search, file uploads, and CLI scaffolding flows.
+  - Add app/module discovery and runtime loading so installed apps contribute metadata, hooks, routes, website assets, and desk modules automatically.
+  - Continue documentation cleanup so README, platform vision, and bench/app/site docs reflect the final `gogal` + `Studio` identity consistently.

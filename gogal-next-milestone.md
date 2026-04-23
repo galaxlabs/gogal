@@ -1,0 +1,240 @@
+- Gogal next milestone plan (execution-ready)
+
+- Phase 1: Complete the current platform foundations
+  - Focus: close the biggest gaps in the existing runtime so Gogal becomes coherent end-to-end before adding major new subsystems.
+
+  - Milestone 1: Native child-table UX end-to-end
+    - Priority: immediate
+    - Estimated complexity: High
+    - Goal: make Studio use real backend `Table` doctypes instead of relying mainly on JSON child-table schemas.
+    - Why first: backend persistence is already present, so the biggest mismatch is now the Studio UX.
+    - Build:
+      - add frontend metadata helpers for backend `Table` fields
+      - render child-table rows from child doctypes in create/edit/detail views
+      - support add/edit/delete/reorder child rows in Studio forms
+      - show hydrated child rows cleanly in list/detail screens
+      - update doctype builder to create/select `Table` field targets safely
+    - Exact files likely to change first:
+      - `frontend/src/lib/metadata.js`
+      - `frontend/src/components/DynamicRecordForm.jsx`
+      - `frontend/src/components/ChildTableField.jsx`
+      - `frontend/src/components/RecordFieldValue.jsx`
+      - `frontend/src/components/DocTypeBuilder.jsx`
+      - `frontend/src/components/ResourceWorkbench.jsx`
+    - Verify:
+      - create a parent doctype with a `Table` field targeting a child doctype
+      - create/edit/delete parent records with child rows from Studio
+      - confirm backend persistence and hydration round-trip correctly
+
+  - Milestone 2: App installation lifecycle
+    - Priority: immediate
+    - Estimated complexity: High
+    - Goal: make `gogal install-app` do real platform work, not just registry updates.
+    - Why second: most future app/module loading depends on install producing a real site state.
+    - Build:
+      - load `app.json` and module manifests fully
+      - import/register app doctypes
+      - run app migrations
+      - sync fixtures
+      - execute install hooks
+      - record install state/version per site
+    - Exact files likely to change first:
+      - `cmd/gogal/install_app.go`
+      - `cmd/gogal/new_app.go`
+      - `models/doctype.go`
+      - `controllers/doctype_controller.go`
+      - `cmd/gogal/init.go`
+      - `cmd/gogal/new_site.go`
+    - Verify:
+      - install a demo app into a fresh site
+      - rerun install safely and confirm idempotency
+      - confirm doctypes and fixtures are available after install
+
+  - Milestone 3: File manager and attachment workflows
+    - Priority: immediate
+    - Estimated complexity: Medium-High
+    - Goal: turn backend upload support into usable platform file handling.
+    - Why in Phase 1: file support already exists on the backend and is a natural platform capability to finish early.
+    - Build:
+      - create Studio file manager view
+      - upload files from Studio
+      - attach files to documents and fields
+      - support public/private visibility, previews, alt text, and metadata editing
+      - expose attachment browsing inside record forms/details
+    - Exact files likely to change first:
+      - `controllers/file_controller.go`
+      - `models/file.go`
+      - `main.go`
+      - `frontend/src/lib/api.js`
+      - `frontend/src/components/ResourceWorkbench.jsx`
+      - `frontend/src/App.jsx`
+      - `frontend/src/components/DynamicRecordForm.jsx`
+    - Verify:
+      - upload and attach files to a record
+      - list and preview files in Studio
+      - confirm public/private behavior works correctly
+
+- Phase 2: Make Gogal a real multi-user, multi-app platform
+  - Focus: secure the system, formalize runtime loading, and make websites/apps behave like first-class installed platform units.
+
+  - Milestone 4: Auth, users, roles, permissions
+    - Priority: high
+    - Estimated complexity: Very High
+    - Goal: move from open framework prototype to protected multi-user platform.
+    - Why first in Phase 2: security should land before broader app/runtime exposure.
+    - Build:
+      - add `User`, `Role`, and permission models
+      - implement login/session or token auth
+      - protect API routes
+      - add Studio login flow and route guards
+      - enforce doctype/document permissions on CRUD and metadata access
+    - Exact files likely to change first:
+      - `config/db.go`
+      - `main.go`
+      - `controllers/resource_controller.go`
+      - `controllers/doctype_controller.go`
+      - `frontend/src/App.jsx`
+      - `frontend/src/lib/api.js`
+    - Verify:
+      - unauthenticated access is blocked where expected
+      - role-based access works for admin vs limited users
+      - Studio shows only allowed areas
+
+  - Milestone 5: App/module runtime loading
+    - Priority: high
+    - Estimated complexity: High
+    - Goal: make installed apps contribute runtime behavior automatically.
+    - Why here: this depends on Milestone 2 producing a real installation lifecycle.
+    - Build:
+      - discover installed apps and modules from site state
+      - load doctypes, hooks, routes, website assets, and desk modules dynamically
+      - define stable app extension points for backend and Studio
+    - Exact files likely to change first:
+      - `cmd/gogal/install_app.go`
+      - `main.go`
+      - `config/db.go`
+      - `models/doctype.go`
+      - `frontend/src/App.jsx`
+      - `frontend/src/lib/api.js`
+    - Verify:
+      - install multiple apps into one site
+      - confirm each app contributes visible desk/runtime features without manual wiring
+
+  - Milestone 6: Website publishing pipeline
+    - Priority: high
+    - Estimated complexity: High
+    - Goal: make app/site `www` scaffolding publishable as a real multi-tenant website system.
+    - Why here: site/app runtime loading and install state should exist before publish orchestration becomes reliable.
+    - Build:
+      - define runtime website asset resolution for bench/site/app `www` folders
+      - add domain mapping rules
+      - support wildcard subdomain generation
+      - emit/refresh Traefik config from site/app settings
+      - add publish/rebuild workflow for generated sites
+    - Exact files likely to change first:
+      - `cmd/gogal/new_site.go`
+      - `cmd/gogal/init.go`
+      - `cmd/gogal/install_app.go`
+      - `main.go`
+      - `frontend/src/App.jsx`
+      - `README.md`
+    - Verify:
+      - create a site with domain config
+      - publish a starter app/site website
+      - confirm generated routing config maps traffic to the correct site/domain
+
+  - Milestone 7: Workflow engine primitives
+    - Priority: medium-high
+    - Estimated complexity: Very High
+    - Goal: support ERP-style business processes beyond raw CRUD.
+    - Why later in Phase 2: workflows make more sense once auth/permissions and install/runtime behavior are established.
+    - Build:
+      - workflow definitions, states, transitions, actions, and approvals
+      - document status transitions with permission checks
+      - assignment and pending-action concepts
+      - hooks/automation triggers on transition events
+    - Exact files likely to change first:
+      - `config/db.go`
+      - `models/resource_mutation.go`
+      - `controllers/resource_controller.go`
+      - `frontend/src/components/ResourceWorkbench.jsx`
+      - `frontend/src/components/DynamicRecordForm.jsx`
+      - `PLATFORM_VISION.md`
+    - Verify:
+      - configure a sample approval workflow
+      - move a record through valid/invalid transitions
+      - confirm state enforcement and auditability
+
+- Phase 3: Expand into full business-platform tooling
+  - Focus: add platform-level builders, reporting surfaces, and long-term stability/documentation.
+
+  - Milestone 8: Reports, dashboards, and pages
+    - Priority: medium
+    - Estimated complexity: High
+    - Goal: expand Gogal from data CRUD into a fuller business operating system.
+    - Build:
+      - `Page`, `Report`, and `Dashboard` metadata objects
+      - Studio builders for custom pages and dashboards
+      - saved queries/report definitions
+      - reusable widgets/charts/cards for desk surfaces
+    - Exact files likely to change first:
+      - `config/db.go`
+      - `models/doctype.go`
+      - `controllers/doctype_controller.go`
+      - `frontend/src/App.jsx`
+      - `frontend/src/components/DocTypeBuilder.jsx`
+      - `frontend/src/components/ResourceWorkbench.jsx`
+    - Verify:
+      - create a page/dashboard from metadata
+      - show live business data from doctypes and reports
+
+  - Milestone 9: Testing and regression harness
+    - Priority: medium
+    - Estimated complexity: Medium-High
+    - Goal: protect the framework as complexity grows.
+    - Build:
+      - Go tests for metadata validation, child tables, link validation/search, uploads, and CLI flows
+      - frontend tests for Studio form rendering and key interactions
+      - smoke tests for bench/site/app lifecycle commands
+    - Exact files likely to change first:
+      - `go.mod`
+      - `models/doctype.go`
+      - `models/resource_mutation.go`
+      - `controllers/resource_controller.go`
+      - `controllers/file_controller.go`
+      - `cmd/gogal/install_app.go`
+      - `frontend/package.json`
+    - Verify:
+      - core test suite runs cleanly and catches regressions in major flows
+
+  - Milestone 10: Documentation and final naming cleanup
+    - Priority: medium
+    - Estimated complexity: Medium
+    - Goal: align docs and onboarding with the actual platform state.
+    - Build:
+      - update README, platform vision, CLI usage docs, and bench/site/app examples
+      - remove lingering `gogal-framework` / old Studio naming where still present
+      - document app structure, installation lifecycle, website publishing, auth, and file flows
+    - Exact files likely to change first:
+      - `README.md`
+      - `PLATFORM_VISION.md`
+      - `cmd/gogal/root.go`
+      - `cmd/gogal/init.go`
+      - `cmd/gogal/new_site.go`
+      - `cmd/gogal/new_app.go`
+      - `frontend/index.html`
+    - Verify:
+      - a new developer can follow docs to bootstrap bench, site, app, and Studio successfully
+
+- Complexity scale
+  - Medium: isolated subsystem or mainly docs/tests/UI polish
+  - Medium-High: multiple files across backend + frontend, but limited architectural risk
+  - High: core runtime behavior changes across platform boundaries
+  - Very High: security or workflow/runtime architecture with lasting platform-wide effects
+
+- Execution order notes
+  - Phase 1 should be completed before serious external adoption of the framework.
+  - Milestone 2 is the prerequisite for Milestones 5 and 6.
+  - Milestone 4 should land before Milestones 5 through 8 are exposed broadly in multi-user environments.
+  - Milestone 9 should begin lightly during Phase 1, but becomes non-optional by mid-Phase 2.
+  - If bandwidth is limited, the best narrow track is: Milestone 1 -> Milestone 2 -> Milestone 4 -> Milestone 5.
