@@ -1,4 +1,4 @@
-module gogal-framework
+module gogal
 
 go 1.25.0
 

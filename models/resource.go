@@ -140,6 +140,9 @@ func DocumentSelectColumns(docType *DocType) []string {
 	columns := make([]string, 0, len(docType.Fields)+4)
 	columns = append(columns, "id", "name", "created_at", "updated_at")
 	for _, field := range docType.Fields {
+		if !IsStoredInParentTable(field) {
+			continue
+		}
 		columns = append(columns, field.FieldName)
 	}
 
@@ -164,6 +167,9 @@ func QueryableField(docType *DocType, fieldName string) (DocField, bool) {
 func SearchableColumns(docType *DocType) []string {
 	columns := []string{"name"}
 	for _, field := range docType.Fields {
+		if !IsStoredInParentTable(field) {
+			continue
+		}
 		if IsTextLikeFieldType(field.FieldType) {
 			columns = append(columns, field.FieldName)
 		}
@@ -182,7 +188,7 @@ func IsTextLikeFieldType(fieldType string) bool {
 }
 
 func IsSortableField(field DocField) bool {
-	return field.FieldType != "JSON"
+	return field.FieldType != "JSON" && field.FieldType != "Table"
 }
 
 func isEmptyValue(value any) bool {

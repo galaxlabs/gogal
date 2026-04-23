@@ -2,7 +2,7 @@
 .env
 
 # Binaries
-gogal-framework
+gogal
 *.exe
 *.exe~
 *.dll

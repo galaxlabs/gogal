@@ -22,12 +22,15 @@ const (
 )
 
 type commonSiteConfig struct {
-	DBHost        string `json:"db_host"`
-	DBPort        int    `json:"db_port"`
-	RedisCache    string `json:"redis_cache"`
-	RedisQueue    string `json:"redis_queue"`
-	RedisSocketIO string `json:"redis_socketio"`
-	BasePort      int    `json:"base_port"`
+	DBHost             string `json:"db_host"`
+	DBPort             int    `json:"db_port"`
+	RedisCache         string `json:"redis_cache"`
+	RedisQueue         string `json:"redis_queue"`
+	RedisSocketIO      string `json:"redis_socketio"`
+	BasePort           int    `json:"base_port"`
+	ReverseProxy       string `json:"reverse_proxy"`
+	WildcardBaseDomain string `json:"wildcard_base_domain,omitempty"`
+	TraefikDynamicDir  string `json:"traefik_dynamic_dir,omitempty"`
 }
 
 func newInitCommand() *cobra.Command {
@@ -81,6 +84,12 @@ func initializeBench(benchRoot string) (*initResult, error) {
 		filepath.Join(benchRoot, "apps"),
 		filepath.Join(benchRoot, "sites"),
 		filepath.Join(benchRoot, "config"),
+		filepath.Join(benchRoot, "www"),
+		filepath.Join(benchRoot, "storage"),
+		filepath.Join(benchRoot, "storage", "public"),
+		filepath.Join(benchRoot, "storage", "private"),
+		filepath.Join(benchRoot, "config", "traefik"),
+		filepath.Join(benchRoot, "config", "traefik", "dynamic"),
 	}
 
 	for _, dir := range directories {
@@ -144,12 +153,14 @@ func ensureCommonSiteConfig(configPath string) (*commonSiteConfig, error) {
 
 func defaultCommonSiteConfig() *commonSiteConfig {
 	return &commonSiteConfig{
-		DBHost:        defaultDBHost,
-		DBPort:        defaultDBPort,
-		RedisCache:    defaultRedisCache,
-		RedisQueue:    defaultRedisQueue,
-		RedisSocketIO: defaultRedisSocketIO,
-		BasePort:      defaultBasePort,
+		DBHost:            defaultDBHost,
+		DBPort:            defaultDBPort,
+		RedisCache:        defaultRedisCache,
+		RedisQueue:        defaultRedisQueue,
+		RedisSocketIO:     defaultRedisSocketIO,
+		BasePort:          defaultBasePort,
+		ReverseProxy:      "traefik",
+		TraefikDynamicDir: "config/traefik/dynamic",
 	}
 }
 
@@ -185,6 +196,15 @@ func mergeCommonSiteConfig(target, existing *commonSiteConfig) {
 	}
 	if existing.BasePort != 0 {
 		target.BasePort = existing.BasePort
+	}
+	if strings.TrimSpace(existing.ReverseProxy) != "" {
+		target.ReverseProxy = existing.ReverseProxy
+	}
+	if strings.TrimSpace(existing.WildcardBaseDomain) != "" {
+		target.WildcardBaseDomain = existing.WildcardBaseDomain
+	}
+	if strings.TrimSpace(existing.TraefikDynamicDir) != "" {
+		target.TraefikDynamicDir = existing.TraefikDynamicDir
 	}
 }
 

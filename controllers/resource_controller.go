@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"strings"
 
-	"gogal-framework/config"
-	"gogal-framework/models"
+	"gogal/config"
+	"gogal/models"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -46,6 +46,12 @@ func ListResources(c *gin.Context) {
 		Find(&records).Error; err != nil {
 		log.Printf("list records for %s failed: %v", docType.Name, err)
 		jsonError(c, http.StatusInternalServerError, "failed_to_list_records", "Unable to list records.", err.Error())
+		return
+	}
+
+	if err := hydrateChildTablesForRecords(config.DB, docType, records); err != nil {
+		log.Printf("hydrate child rows for %s failed: %v", docType.Name, err)
+		jsonError(c, http.StatusInternalServerError, "failed_to_list_records", "Unable to hydrate child table rows.", err.Error())
 		return
 	}
 
@@ -109,19 +115,29 @@ func CreateResource(c *gin.Context) {
 	}
 
 	delete(payload, "name")
-	prepared, err := models.PrepareDocumentPayload(docType, payload, true)
+	prepared, err := models.PrepareDocumentMutation(config.DB, docType, payload, true)
 	if err != nil {
 		jsonError(c, http.StatusBadRequest, "invalid_record_payload", err.Error(), nil)
 		return
 	}
 
-	values := make(map[string]any, len(prepared)+1)
+	values := make(map[string]any, len(prepared.Values)+1)
 	values["name"] = recordName
-	for key, value := range prepared {
+	for key, value := range prepared.Values {
 		values[key] = value
 	}
 
-	if err := config.DB.Table(docType.StorageTable).Create(values).Error; err != nil {
+	if err := config.DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Table(docType.StorageTable).Create(values).Error; err != nil {
+			return err
+		}
+
+		if err := saveChildTables(tx, docType, recordName, prepared.ChildTables); err != nil {
+			return err
+		}
+
+		return nil
+	}); err != nil {
 		log.Printf("create record in %s failed: %v", docType.Name, err)
 		jsonError(c, http.StatusBadRequest, "failed_to_create_record", err.Error(), nil)
 		return
@@ -163,29 +179,59 @@ func UpdateResource(c *gin.Context) {
 		return
 	}
 
-	prepared, err := models.PrepareDocumentPayload(docType, payload, false)
+	prepared, err := models.PrepareDocumentMutation(config.DB, docType, payload, false)
 	if err != nil {
 		jsonError(c, http.StatusBadRequest, "invalid_record_payload", err.Error(), nil)
 		return
 	}
 
-	if len(prepared) == 0 {
+	if len(prepared.Values) == 0 && len(prepared.ChildTables) == 0 {
 		jsonError(c, http.StatusBadRequest, "empty_update", "Provide at least one editable field to update.", nil)
 		return
 	}
 
-	prepared["updated_at"] = gorm.Expr("NOW()")
-	result := config.DB.Table(docType.StorageTable).
-		Where("name = ? AND deleted_at IS NULL", recordName).
-		Updates(prepared)
-	if result.Error != nil {
-		log.Printf("update record %s/%s failed: %v", docType.Name, recordName, result.Error)
-		jsonError(c, http.StatusBadRequest, "failed_to_update_record", result.Error.Error(), nil)
-		return
-	}
+	if err := config.DB.Transaction(func(tx *gorm.DB) error {
+		rowsAffected := int64(0)
+		if len(prepared.Values) > 0 {
+			prepared.Values["updated_at"] = gorm.Expr("NOW()")
+			result := tx.Table(docType.StorageTable).
+				Where("name = ? AND deleted_at IS NULL", recordName).
+				Updates(prepared.Values)
+			if result.Error != nil {
+				return result.Error
+			}
+			rowsAffected = result.RowsAffected
+		}
 
-	if result.RowsAffected == 0 {
-		jsonError(c, http.StatusNotFound, "record_not_found", fmt.Sprintf("Record %q was not found in %q.", recordName, docType.Name), nil)
+		if len(prepared.ChildTables) > 0 {
+			result := tx.Table(docType.StorageTable).
+				Where("name = ? AND deleted_at IS NULL", recordName).
+				Update("updated_at", gorm.Expr("NOW()"))
+			if result.Error != nil {
+				return result.Error
+			}
+			if rowsAffected == 0 {
+				rowsAffected = result.RowsAffected
+			}
+
+			if err := saveChildTables(tx, docType, recordName, prepared.ChildTables); err != nil {
+				return err
+			}
+		}
+
+		if rowsAffected == 0 {
+			return gorm.ErrRecordNotFound
+		}
+
+		return nil
+	}); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			jsonError(c, http.StatusNotFound, "record_not_found", fmt.Sprintf("Record %q was not found in %q.", recordName, docType.Name), nil)
+			return
+		}
+
+		log.Printf("update record %s/%s failed: %v", docType.Name, recordName, err)
+		jsonError(c, http.StatusBadRequest, "failed_to_update_record", err.Error(), nil)
 		return
 	}
 
@@ -214,20 +260,29 @@ func DeleteResource(c *gin.Context) {
 		return
 	}
 
-	result := config.DB.Table(docType.StorageTable).
-		Where("name = ? AND deleted_at IS NULL", recordName).
-		Updates(map[string]any{
-			"deleted_at": gorm.Expr("NOW()"),
-			"updated_at": gorm.Expr("NOW()"),
-		})
-	if result.Error != nil {
-		log.Printf("delete record %s/%s failed: %v", docType.Name, recordName, result.Error)
-		jsonError(c, http.StatusInternalServerError, "failed_to_delete_record", "Unable to delete record.", result.Error.Error())
-		return
-	}
+	if err := config.DB.Transaction(func(tx *gorm.DB) error {
+		result := tx.Table(docType.StorageTable).
+			Where("name = ? AND deleted_at IS NULL", recordName).
+			Updates(map[string]any{
+				"deleted_at": gorm.Expr("NOW()"),
+				"updated_at": gorm.Expr("NOW()"),
+			})
+		if result.Error != nil {
+			return result.Error
+		}
+		if result.RowsAffected == 0 {
+			return gorm.ErrRecordNotFound
+		}
 
-	if result.RowsAffected == 0 {
-		jsonError(c, http.StatusNotFound, "record_not_found", fmt.Sprintf("Record %q was not found in %q.", recordName, docType.Name), nil)
+		return deleteAllChildTableRows(tx, docType, recordName)
+	}); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			jsonError(c, http.StatusNotFound, "record_not_found", fmt.Sprintf("Record %q was not found in %q.", recordName, docType.Name), nil)
+			return
+		}
+
+		log.Printf("delete record %s/%s failed: %v", docType.Name, recordName, err)
+		jsonError(c, http.StatusInternalServerError, "failed_to_delete_record", "Unable to delete record.", err.Error())
 		return
 	}
 
@@ -258,21 +313,7 @@ func loadDocTypeForResource(c *gin.Context, withFields bool) (*models.DocType, b
 }
 
 func loadDocTypeMetadata(name string, withFields bool) (*models.DocType, error) {
-	trimmedName := strings.TrimSpace(name)
-	var docType models.DocType
-	query := config.DB.Model(&models.DocType{})
-	if withFields {
-		query = query.Preload("Fields", func(tx *gorm.DB) *gorm.DB {
-			return tx.Order("sort_order ASC, id ASC")
-		})
-	}
-
-	err := query.Where("LOWER(name) = LOWER(?)", trimmedName).First(&docType).Error
-	if err != nil {
-		return nil, err
-	}
-
-	return &docType, nil
+	return models.LoadDocTypeByName(config.DB, strings.TrimSpace(name), withFields)
 }
 
 func fetchResourceRecord(docType *models.DocType, recordName string) (map[string]any, error) {
@@ -282,6 +323,10 @@ func fetchResourceRecord(docType *models.DocType, recordName string) (map[string
 		Where("name = ? AND deleted_at IS NULL", recordName).
 		Take(&record).Error
 	if err != nil {
+		return nil, err
+	}
+
+	if err := hydrateChildTablesForRecords(config.DB, docType, []map[string]any{record}); err != nil {
 		return nil, err
 	}
 

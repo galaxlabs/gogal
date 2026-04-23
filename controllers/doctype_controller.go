@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"strings"
 
-	"gogal-framework/config"
-	"gogal-framework/models"
+	"gogal/config"
+	"gogal/models"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -66,6 +66,10 @@ func CreateDocType(c *gin.Context) {
 
 		if existingCount > 0 {
 			return fmt.Errorf("doctype %q or table %q already exists", docType.Name, docType.StorageTable)
+		}
+
+		if err := validateDocTypeFieldReferences(tx, docType); err != nil {
+			return err
 		}
 
 		if err := tx.Create(docType).Error; err != nil {
@@ -137,7 +141,20 @@ func buildCreateTableStatement(docType *models.DocType) (string, error) {
 		"deleted_at TIMESTAMPTZ NULL",
 	}
 
+	if docType.IsChildTable {
+		columnDefinitions = append(columnDefinitions,
+			"parent VARCHAR(140) NOT NULL",
+			"parenttype VARCHAR(140) NOT NULL",
+			"parentfield VARCHAR(140) NOT NULL",
+			"idx INTEGER NOT NULL DEFAULT 0",
+		)
+	}
+
 	for _, field := range docType.Fields {
+		if !models.IsStoredInParentTable(field) {
+			continue
+		}
+
 		columnType, ok := models.FieldDatabaseType(field.FieldType)
 		if !ok {
 			return "", fmt.Errorf("unsupported fieldtype %q for field %q", field.FieldType, field.FieldName)
@@ -161,4 +178,30 @@ func buildCreateTableStatement(docType *models.DocType) (string, error) {
 	)
 
 	return statement, nil
+}
+
+func validateDocTypeFieldReferences(tx *gorm.DB, docType *models.DocType) error {
+	for _, field := range docType.Fields {
+		targetDocTypeName := models.ResolveTargetDocTypeName(field)
+		if targetDocTypeName == "" {
+			continue
+		}
+
+		switch field.FieldType {
+		case "Link", "Table":
+			targetDocType, err := models.LoadDocTypeByName(tx, targetDocTypeName, false)
+			if err != nil {
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					return fmt.Errorf("field %q references DocType %q, but it does not exist yet", field.FieldName, targetDocTypeName)
+				}
+				return fmt.Errorf("field %q: load referenced DocType %q: %w", field.FieldName, targetDocTypeName, err)
+			}
+
+			if field.FieldType == "Table" && !targetDocType.IsChildTable {
+				return fmt.Errorf("field %q references DocType %q, but that DocType is not marked as a child table", field.FieldName, targetDocType.Name)
+			}
+		}
+	}
+
+	return nil
 }

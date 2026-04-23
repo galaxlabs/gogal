@@ -35,6 +35,7 @@ var supportedFieldTypes = map[string]string{
 	"Percent":     "NUMERIC(8,4)",
 	"Select":      "TEXT",
 	"Small Text":  "TEXT",
+	"Table":       "",
 	"Text":        "TEXT",
 	"Time":        "TIME",
 }
@@ -46,6 +47,7 @@ type CreateDocTypeRequest struct {
 	TableName    string     `json:"table_name"`
 	Description  string     `json:"description"`
 	IsSingle     bool       `json:"is_single"`
+	IsChildTable bool       `json:"is_child_table"`
 	TrackChanges *bool      `json:"track_changes"`
 	Fields       []DocField `json:"fields" binding:"required"`
 }
@@ -61,6 +63,7 @@ type DocType struct {
 	StorageTable string         `gorm:"column:table_name;size:140;not null;uniqueIndex" json:"table_name"`
 	Description  string         `gorm:"type:text" json:"description,omitempty"`
 	IsSingle     bool           `gorm:"default:false" json:"is_single"`
+	IsChildTable bool           `gorm:"column:is_child_table;default:false" json:"is_child_table"`
 	IsSystem     bool           `gorm:"default:false" json:"is_system"`
 	TrackChanges bool           `gorm:"default:true" json:"track_changes"`
 	Fields       []DocField     `gorm:"foreignKey:DocTypeID;constraint:OnDelete:CASCADE" json:"fields"`
@@ -115,6 +118,7 @@ func NewDocTypeFromRequest(req CreateDocTypeRequest) (*DocType, error) {
 		StorageTable: strings.TrimSpace(req.TableName),
 		Description:  strings.TrimSpace(req.Description),
 		IsSingle:     req.IsSingle,
+		IsChildTable: req.IsChildTable,
 		TrackChanges: trackChanges,
 		Fields:       req.Fields,
 	}
@@ -135,6 +139,10 @@ func (d *DocType) Normalize() error {
 
 	if d.Name == "" {
 		return fmt.Errorf("doctype name is required")
+	}
+
+	if d.IsSingle && d.IsChildTable {
+		return fmt.Errorf("a doctype cannot be both single and child table")
 	}
 
 	if d.Label == "" {
@@ -162,6 +170,10 @@ func (d *DocType) Normalize() error {
 
 		if err := field.Normalize(); err != nil {
 			return fmt.Errorf("invalid field at position %d: %w", index+1, err)
+		}
+
+		if d.IsChildTable && field.FieldType == "Table" {
+			return fmt.Errorf("child table doctypes cannot define nested Table fields")
 		}
 
 		if _, exists := seenFields[field.FieldName]; exists {
@@ -205,6 +217,21 @@ func (f *DocField) Normalize() error {
 
 	if _, ok := supportedFieldTypes[f.FieldType]; !ok {
 		return fmt.Errorf("unsupported fieldtype %q", f.FieldType)
+	}
+
+	if f.FieldType == "Link" || f.FieldType == "Table" {
+		if strings.TrimSpace(f.Options) == "" {
+			return fmt.Errorf("options are required for fieldtype %q", f.FieldType)
+		}
+	}
+
+	if f.FieldType == "Table" {
+		if f.Unique {
+			return fmt.Errorf("Table fields cannot be marked unique")
+		}
+		if f.DefaultValue != "" {
+			return fmt.Errorf("Table fields cannot define a default value")
+		}
 	}
 
 	return nil
@@ -260,6 +287,32 @@ func FieldDatabaseType(fieldType string) (string, bool) {
 	return databaseType, ok
 }
 
+func IsStoredInParentTable(field DocField) bool {
+	return field.FieldType != "Table"
+}
+
+func ResolveTargetDocTypeName(field DocField) string {
+	return strings.TrimSpace(field.Options)
+}
+
+func LoadDocTypeByName(db *gorm.DB, name string, withFields bool) (*DocType, error) {
+	trimmedName := strings.TrimSpace(name)
+	var docType DocType
+	query := db.Model(&DocType{})
+	if withFields {
+		query = query.Preload("Fields", func(tx *gorm.DB) *gorm.DB {
+			return tx.Order("sort_order ASC, id ASC")
+		})
+	}
+
+	err := query.Where("LOWER(name) = LOWER(?)", trimmedName).First(&docType).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &docType, nil
+}
+
 func SystemDocTypes() []DocType {
 	return []DocType{
 		{
@@ -277,6 +330,7 @@ func SystemDocTypes() []DocType {
 				{FieldName: "table_name", Label: "Storage Table", FieldType: "Data", Required: true, Unique: true},
 				{FieldName: "description", Label: "Description", FieldType: "Text"},
 				{FieldName: "is_single", Label: "Is Single", FieldType: "Check"},
+				{FieldName: "is_child_table", Label: "Is Child Table", FieldType: "Check"},
 				{FieldName: "is_system", Label: "Is System", FieldType: "Check"},
 				{FieldName: "track_changes", Label: "Track Changes", FieldType: "Check"},
 			},

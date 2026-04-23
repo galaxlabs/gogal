@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"gogal-framework/models"
+	"gogal/models"
 
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
@@ -41,7 +41,7 @@ func ConnectDB() error {
 		return fmt.Errorf("ping database: %w", err)
 	}
 
-	if err := db.AutoMigrate(&models.DocType{}, &models.DocField{}); err != nil {
+	if err := db.AutoMigrate(&models.DocType{}, &models.DocField{}, &models.File{}); err != nil {
 		return fmt.Errorf("auto migrate metadata tables: %w", err)
 	}
 

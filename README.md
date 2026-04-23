@@ -1,6 +1,6 @@
-# gogal-framework
+# gogal
 
-`gogal-framework` is a full-stack, batteries-included enterprise application framework written in **Go** and **JavaScript** for building low-code / no-code business apps.
+`gogal` is a full-stack, batteries-included enterprise application framework written in **Go** and **JavaScript** for building low-code / no-code business apps.
 
 It takes inspiration from systems like Frappe and Odoo, but follows a Go-first architecture with explicit services, strong JSON APIs, and metadata-driven runtime behavior.
 
@@ -42,7 +42,7 @@ It takes inspiration from systems like Frappe and Odoo, but follows a Go-first a
 ## Project Structure
 
 ```text
-gogal-framework/
+gogal/
 ├── config/
 │   └── db.go
 ├── controllers/

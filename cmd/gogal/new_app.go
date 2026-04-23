@@ -26,6 +26,7 @@ type appManifest struct {
 	CreatedAt   string              `json:"created_at"`
 	Backend     appBackendManifest  `json:"backend"`
 	Frontend    appFrontendManifest `json:"frontend"`
+	Website     appWebsiteManifest  `json:"website"`
 	Modules     []appModuleManifest `json:"modules"`
 }
 
@@ -39,6 +40,13 @@ type appFrontendManifest struct {
 	Entry      string `json:"entry"`
 	PagesDir   string `json:"pages_dir"`
 	WidgetsDir string `json:"widgets_dir"`
+}
+
+type appWebsiteManifest struct {
+	WWWDir          string `json:"www_dir"`
+	TemplatesDir    string `json:"templates_dir"`
+	PublicDir       string `json:"public_dir"`
+	SupportsDomains bool   `json:"supports_domains"`
 }
 
 type appModuleManifest struct {
@@ -71,7 +79,7 @@ func newNewAppCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "new-app [app-name]",
 		Short: "Create a new Gogal app scaffold inside a bench",
-		Long: strings.TrimSpace(`Create a new installable Gogal app scaffold with module metadata, backend extension points, and frontend entrypoints.
+		Long: strings.TrimSpace(`Create a new installable Gogal app scaffold with module metadata, backend extension points, frontend entrypoints, and website publishing folders.
 
 The command is idempotent: rerunning it preserves existing source files and only fills in any missing scaffold pieces.`),
 		Args: cobra.ExactArgs(1),
@@ -86,7 +94,7 @@ The command is idempotent: rerunning it preserves existing source files and only
 			cmd.Printf("Manifest: %s\n", result.ManifestPath)
 			cmd.Printf("Primary module: %s\n", result.ModuleName)
 			cmd.Printf("Suggested route: %s\n", result.Route)
-			cmd.Println("Scaffold includes backend stubs, frontend entrypoints, module metadata, fixtures, and migrations.")
+			cmd.Println("Scaffold includes backend stubs, frontend entrypoints, website folders, module metadata, fixtures, and migrations.")
 
 			return nil
 		},
@@ -160,7 +168,11 @@ func createApp(cmd *cobra.Command, rawAppName string, options *newAppOptions) (*
 		filepath.Join(appPath, "fixtures"),
 		filepath.Join(appPath, "migrations"),
 		filepath.Join(appPath, "public"),
+		filepath.Join(appPath, "www"),
+		filepath.Join(appPath, "www", "templates"),
+		filepath.Join(appPath, "www", "pages"),
 		filepath.Join(appPath, "scripts"),
+		filepath.Join(appPath, "uploads"),
 		modulePath,
 		docTypesDir,
 	}
@@ -199,6 +211,7 @@ func createApp(cmd *cobra.Command, rawAppName string, options *newAppOptions) (*
 		filepath.Join(appPath, "frontend", "src", "components", "AppCard.jsx"): appCardContents(),
 		filepath.Join(appPath, "frontend", "src", "lib", "routes.js"):          frontendRoutesContents(manifest),
 		filepath.Join(appPath, "modules", moduleSlug, "module.json"):           moduleManifestContents(moduleSlug, moduleLabel),
+		filepath.Join(appPath, "www", "index.html"):                            appWebsiteContents(manifest),
 	}
 
 	for path, content := range files {
@@ -212,6 +225,9 @@ func createApp(cmd *cobra.Command, rawAppName string, options *newAppOptions) (*
 		filepath.Join(appPath, "fixtures", ".gitkeep"),
 		filepath.Join(appPath, "migrations", ".gitkeep"),
 		filepath.Join(appPath, "public", ".gitkeep"),
+		filepath.Join(appPath, "www", "templates", ".gitkeep"),
+		filepath.Join(appPath, "www", "pages", ".gitkeep"),
+		filepath.Join(appPath, "uploads", ".gitkeep"),
 		filepath.Join(appPath, "scripts", ".gitkeep"),
 	} {
 		if err := writeFileIfMissing(keepPath, "", 0o644); err != nil {
@@ -247,6 +263,12 @@ func defaultAppManifest(appName, title, description, route, moduleSlug, moduleLa
 			Entry:      "frontend/src/index.js",
 			PagesDir:   "frontend/src/pages",
 			WidgetsDir: "frontend/src/components",
+		},
+		Website: appWebsiteManifest{
+			WWWDir:          "www",
+			TemplatesDir:    "www/templates",
+			PublicDir:       "public",
+			SupportsDomains: true,
 		},
 		Modules: []appModuleManifest{
 			{
@@ -312,6 +334,18 @@ func mergeAppManifest(target, existing *appManifest) {
 	}
 	if strings.TrimSpace(existing.Frontend.WidgetsDir) != "" {
 		target.Frontend.WidgetsDir = existing.Frontend.WidgetsDir
+	}
+	if strings.TrimSpace(existing.Website.WWWDir) != "" {
+		target.Website.WWWDir = existing.Website.WWWDir
+	}
+	if strings.TrimSpace(existing.Website.TemplatesDir) != "" {
+		target.Website.TemplatesDir = existing.Website.TemplatesDir
+	}
+	if strings.TrimSpace(existing.Website.PublicDir) != "" {
+		target.Website.PublicDir = existing.Website.PublicDir
+	}
+	if existing.Website.SupportsDomains {
+		target.Website.SupportsDomains = existing.Website.SupportsDomains
 	}
 	if len(existing.Modules) > 0 {
 		target.Modules = existing.Modules
@@ -402,6 +436,7 @@ func appREADMEContents(manifest *appManifest) string {
 	builder.WriteString("- `app.json` – app manifest and integration metadata\n")
 	builder.WriteString("- `backend/` – Go hooks, controllers, and services\n")
 	builder.WriteString("- `frontend/` – React entrypoints, pages, and widgets\n")
+	builder.WriteString("- `www/` – website templates and public pages for custom domains or wildcard routes\n")
 	builder.WriteString("- `modules/` – module metadata and owned DocType JSON definitions\n")
 	builder.WriteString("- `fixtures/` – seed data and exported records\n")
 	builder.WriteString("- `migrations/` – future schema/data migration scripts\n\n")
@@ -411,6 +446,7 @@ func appREADMEContents(manifest *appManifest) string {
 	builder.WriteString("/doctypes/`.\n")
 	builder.WriteString("2. Register backend hooks and service logic in `backend/hooks`.\n")
 	builder.WriteString("3. Build the runtime screens from `frontend/src/pages`.\n")
+	builder.WriteString("4. Publish the app website from `www/` when you are ready for custom domains.\n")
 	return builder.String()
 }
 
@@ -500,4 +536,23 @@ func moduleManifestContents(moduleSlug string, moduleLabel string) string {
   "doctype_path": "doctypes"
 }
 `, moduleSlug, moduleLabel)
+}
+
+func appWebsiteContents(manifest *appManifest) string {
+	return fmt.Sprintf(`<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>%s</title>
+  </head>
+  <body>
+    <main style="font-family: system-ui, sans-serif; margin: 4rem auto; max-width: 48rem; padding: 0 1.25rem; color: #0f172a;">
+      <p style="text-transform: uppercase; letter-spacing: 0.24em; color: #0ea5e9; font-size: 0.8rem; font-weight: 700;">gogal app website</p>
+      <h1 style="font-size: 2.5rem; margin: 1rem 0;">%s</h1>
+      <p style="line-height: 1.8; color: #475569;">This starter website lives inside the app-level <code>www/</code> folder so each business app can publish its own domain, wildcard route, or generated public site.</p>
+    </main>
+  </body>
+</html>
+`, manifest.Title, manifest.Title)
 }

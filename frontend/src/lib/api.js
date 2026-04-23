@@ -52,6 +52,25 @@ export async function fetchResources(doctype, query = {}) {
   return payload;
 }
 
+export async function searchLinkOptions(doctype, query = {}) {
+  const params = new URLSearchParams();
+  Object.entries(query).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === '') {
+      return;
+    }
+    params.set(key, value);
+  });
+
+  const suffix = params.size > 0 ? `?${params.toString()}` : '';
+  const payload = await request(`/api/resource/${encodeURIComponent(doctype)}/link-search${suffix}`);
+  return payload.data || [];
+}
+
+export async function fetchResource(doctype, name) {
+	const payload = await request(`/api/resource/${encodeURIComponent(doctype)}/${encodeURIComponent(name)}`);
+	return payload.data;
+}
+
 export async function createResource(doctype, document) {
   const payload = await request(`/api/resource/${encodeURIComponent(doctype)}`, {
     method: 'POST',

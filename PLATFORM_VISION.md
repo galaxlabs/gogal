@@ -1,8 +1,8 @@
-# Gogal Framework Vision
+# Gogal Vision
 
 ## Mission
 
-Build `gogal-framework` as a **full-stack, batteries-included, metadata-driven low-code/no-code platform** written in **Go** and **JavaScript**.
+Build `gogal` as a **full-stack, batteries-included, metadata-driven low-code/no-code platform** written in **Go** and **JavaScript**.
 
 The platform should let developers, operators, and business teams:
 
@@ -453,6 +453,6 @@ The most valuable next implementation steps are:
 
 ## Positioning Statement
 
-**Gogal Framework** should be:
+**Gogal** should be:
 
 > A full-stack, batteries-included, metadata-driven low-code application platform built with Go and JavaScript for teams that want ERP-style power with modern architecture and cleaner developer ergonomics.

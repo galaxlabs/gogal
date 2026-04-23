@@ -26,12 +26,20 @@ var (
 )
 
 type siteConfig struct {
-	DBName        string   `json:"db_name"`
-	DBUser        string   `json:"db_user"`
-	DBPassword    string   `json:"db_password"`
-	DBHost        string   `json:"db_host"`
-	DBPort        int      `json:"db_port"`
-	InstalledApps []string `json:"installed_apps,omitempty"`
+	DBName             string   `json:"db_name"`
+	DBUser             string   `json:"db_user"`
+	DBPassword         string   `json:"db_password"`
+	DBHost             string   `json:"db_host"`
+	DBPort             int      `json:"db_port"`
+	InstalledApps      []string `json:"installed_apps,omitempty"`
+	WebsiteEnabled     bool     `json:"website_enabled"`
+	PrimaryDomain      string   `json:"primary_domain,omitempty"`
+	Domains            []string `json:"domains,omitempty"`
+	WwwRoot            string   `json:"www_root,omitempty"`
+	PublicFilesRoot    string   `json:"public_files_root,omitempty"`
+	PrivateFilesRoot   string   `json:"private_files_root,omitempty"`
+	WildcardSubdomain  string   `json:"wildcard_subdomain,omitempty"`
+	ReverseProxyRouter string   `json:"reverse_proxy_router,omitempty"`
 }
 
 type newSiteOptions struct {
@@ -130,7 +138,10 @@ func createSite(cmd *cobra.Command, rawSiteName string, options *newSiteOptions)
 	sitePath := filepath.Join(benchRoot, "sites", siteName)
 	publicPath := filepath.Join(sitePath, "public")
 	privatePath := filepath.Join(sitePath, "private")
-	for _, dir := range []string{sitePath, publicPath, privatePath} {
+	wwwPath := filepath.Join(sitePath, "www")
+	publicFilesPath := filepath.Join(publicPath, "files")
+	privateFilesPath := filepath.Join(privatePath, "files")
+	for _, dir := range []string{sitePath, publicPath, privatePath, wwwPath, publicFilesPath, privateFilesPath} {
 		if err := ensureDirectory(dir); err != nil {
 			return nil, err
 		}
@@ -146,8 +157,16 @@ func createSite(cmd *cobra.Command, rawSiteName string, options *newSiteOptions)
 	identifierBase := makePostgresIdentifierBase(siteName)
 
 	resolvedConfig := &siteConfig{
-		DBHost: commonConfig.DBHost,
-		DBPort: commonConfig.DBPort,
+		DBHost:             commonConfig.DBHost,
+		DBPort:             commonConfig.DBPort,
+		WebsiteEnabled:     true,
+		PrimaryDomain:      siteName,
+		Domains:            []string{siteName},
+		WwwRoot:            "www",
+		PublicFilesRoot:    "public/files",
+		PrivateFilesRoot:   "private/files",
+		WildcardSubdomain:  strings.ReplaceAll(strings.Split(siteName, ".")[0], "_", "-"),
+		ReverseProxyRouter: strings.ReplaceAll(siteName, ".", "-"),
 	}
 	if existingSiteConfig != nil {
 		mergeSiteConfig(resolvedConfig, existingSiteConfig)
@@ -195,6 +214,13 @@ func createSite(cmd *cobra.Command, rawSiteName string, options *newSiteOptions)
 	}
 
 	if err := writeJSONFile(siteConfigPath, resolvedConfig); err != nil {
+		return nil, err
+	}
+
+	if err := writeFileIfMissing(filepath.Join(wwwPath, "index.html"), defaultWebsiteIndex(siteName), 0o644); err != nil {
+		return nil, err
+	}
+	if err := writeFileIfMissing(filepath.Join(sitePath, "traefik.dynamic.yml"), defaultTraefikSiteConfig(resolvedConfig), 0o644); err != nil {
 		return nil, err
 	}
 
@@ -344,6 +370,63 @@ func mergeSiteConfig(target, existing *siteConfig) {
 	if len(existing.InstalledApps) > 0 {
 		target.InstalledApps = appendUniquePreserveOrder(target.InstalledApps, existing.InstalledApps...)
 	}
+	if existing.WebsiteEnabled {
+		target.WebsiteEnabled = existing.WebsiteEnabled
+	}
+	if strings.TrimSpace(existing.PrimaryDomain) != "" {
+		target.PrimaryDomain = existing.PrimaryDomain
+	}
+	if len(existing.Domains) > 0 {
+		target.Domains = append([]string(nil), existing.Domains...)
+	}
+	if strings.TrimSpace(existing.WwwRoot) != "" {
+		target.WwwRoot = existing.WwwRoot
+	}
+	if strings.TrimSpace(existing.PublicFilesRoot) != "" {
+		target.PublicFilesRoot = existing.PublicFilesRoot
+	}
+	if strings.TrimSpace(existing.PrivateFilesRoot) != "" {
+		target.PrivateFilesRoot = existing.PrivateFilesRoot
+	}
+	if strings.TrimSpace(existing.WildcardSubdomain) != "" {
+		target.WildcardSubdomain = existing.WildcardSubdomain
+	}
+	if strings.TrimSpace(existing.ReverseProxyRouter) != "" {
+		target.ReverseProxyRouter = existing.ReverseProxyRouter
+	}
+}
+
+func defaultWebsiteIndex(siteName string) string {
+	return fmt.Sprintf(`<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>%s</title>
+  </head>
+  <body>
+    <main style="font-family: system-ui, sans-serif; margin: 4rem auto; max-width: 48rem; padding: 0 1.25rem; color: #0f172a;">
+      <p style="text-transform: uppercase; letter-spacing: 0.24em; color: #0ea5e9; font-size: 0.8rem; font-weight: 700;">gogal site</p>
+      <h1 style="font-size: 2.5rem; margin: 1rem 0;">%s website is ready</h1>
+      <p style="line-height: 1.8; color: #475569;">This site can be published on its own domain, routed through a wildcard, or served via Traefik. Replace this starter page with generated content or app-driven website templates.</p>
+    </main>
+  </body>
+</html>
+`, siteName, siteName)
+}
+
+func defaultTraefikSiteConfig(config *siteConfig) string {
+	return fmt.Sprintf(`http:
+  routers:
+    %s:
+      rule: "Host(\"%s\")"
+      service: %s
+  services:
+    %s:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:%d"
+`, config.ReverseProxyRouter, config.PrimaryDomain, config.ReverseProxyRouter, config.ReverseProxyRouter, defaultBasePort)
 }
 
 func promptValue(cmd *cobra.Command, reader *bufio.Reader, label, currentValue string, noInput bool) (string, error) {
