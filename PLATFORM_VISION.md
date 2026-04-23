@@ -2,17 +2,17 @@
 
 ## Mission
 
-Build `gogal` as a **full-stack, batteries-included, metadata-driven low-code/no-code platform** written in **Go** and **JavaScript**.
+Build `gogal` as a **full-stack, batteries-included, metadata-driven low-code/no-code platform** centered on **Go**, **server-rendered HTML**, and **lightweight JavaScript**.
 
 The platform should let developers, operators, and business teams:
 
 - define business apps using metadata
 - generate forms, lists, dashboards, and workflows from configuration
 - expose REST APIs automatically
-- plug in custom Go services and React components where needed
+- plug in custom Go services and focused frontend widgets where needed
 - move smoothly between **no-code**, **low-code**, and **pro-code** development
 
-This positions Gogal as a Go-native alternative to frameworks like Frappe and Odoo, with a modern frontend stack and clean backend architecture.
+This positions Gogal as a Go-native alternative to frameworks like Frappe and Odoo, with a server-rendered desk, HTMX-driven interactions, and clean backend architecture.
 
 ---
 
@@ -94,7 +94,7 @@ Low-code should allow:
 Pro-code should allow:
 
 - custom Go hooks
-- custom React components
+- custom HTMX endpoints and vanilla JavaScript widgets
 - external service integrations
 - package/module development
 - custom build pipelines
@@ -104,8 +104,8 @@ Pro-code should allow:
 The stack should feel unified:
 
 - **Backend:** Go, Gin, GORM, PostgreSQL
-- **Frontend:** React, Tailwind CSS, component-driven renderer
-- **Builder/Admin UI:** metadata studio in React
+- **Frontend:** Go `html/template`, HTMX, vanilla JavaScript, Tailwind CSS
+- **Builder/Admin UI:** server-rendered Gogal Studio desk
 - **Runtime UI:** generated forms, list views, dashboards, kanban, reports
 - **Developer Tooling:** CLI, migrations, seeders, scaffolding, packaging
 
@@ -189,9 +189,9 @@ Responsible for:
 
 ## Frontend Layers
 
-### Admin Studio
+### Gogal Studio Desk
 
-React-based builder for:
+Server-rendered builder and admin desk for:
 
 - DocType designer
 - field designer
@@ -202,11 +202,11 @@ React-based builder for:
 - report builder
 - app settings
 
-This surface should be branded as **UI Studio**: the metadata-first frontend for Gogal builders, admins, and operators.
+This surface should be branded as **Gogal Studio**: a Go-template desk that uses HTMX swaps and small vanilla-JS islands instead of a heavy SPA shell.
 
 ### Runtime Renderer
 
-React renderer that consumes metadata and dynamically generates:
+Metadata-driven pages that dynamically generate:
 
 - forms
 - list views
@@ -217,28 +217,32 @@ React renderer that consumes metadata and dynamically generates:
 - filters
 - search panels
 
-### Component Registry
+The runtime should prefer server-rendered views first, with targeted client-side behavior only where it adds clear value.
 
-A registry for mapping metadata field types to React components:
+### Field Renderer Registry
+
+A registry for mapping metadata field types to rendered controls and progressive enhancements:
 
 - `Data` -> text input
 - `Text` -> textarea
 - `Check` -> checkbox/switch
 - `Date` -> date picker
 - `Datetime` -> datetime picker
-- `Link` -> async select
+- `Link` -> async search/select
 - `JSON` -> code/editor widget
 - `Table` -> child table grid
 
 ### Extension Layer
 
-Allow custom React components for advanced UI:
+Allow custom frontend behavior for advanced UI:
 
 - field widgets
 - chart widgets
 - dashboard cards
 - custom pages
 - embedded app screens
+
+The default rule should be: render on the server first, then enhance only the parts that need richer interactivity.
 
 ---
 
@@ -284,7 +288,7 @@ Goal: make the platform usable for real internal business apps.
 
 ## Phase 3 - Low-Code Builder
 
-Add Admin Studio in React:
+Add Gogal Studio in Go templates + HTMX:
 
 - visual DocType builder
 - field ordering and grouping
@@ -409,9 +413,9 @@ Recommended route families:
 
 ## Frontend Deliverables
 
-The React side should be split into two products:
+The frontend should be split into two products:
 
-### 1. Builder App
+### 1. Gogal Studio
 
 For admins and app designers:
 
@@ -440,10 +444,10 @@ For end users:
 Gogal becomes successful when a team can:
 
 1. define a new business object without writing SQL
-2. generate forms and list views without writing React
+2. generate forms and list views without writing custom frontend pages
 3. enforce access rules without hardcoding controller logic
 4. attach workflows and automation without rewriting the backend
-5. extend any part with Go or React when business needs become advanced
+5. extend any part with Go, HTMX endpoints, or focused JavaScript widgets when business needs become advanced
 
 That is the sweet spot:
 
@@ -462,7 +466,7 @@ The most valuable next implementation steps are:
 3. child table metadata and nested document saving
 4. richer doctype metadata including attachment/image semantics and single/child-table UX rules
 5. authentication, users, roles, and permissions
-6. React admin UI Studio skeleton
+6. Gogal Studio desk templates and HTMX navigation skeleton
 7. metadata-driven form renderer contract
 8. audit trail and activity log
 9. workflow engine
@@ -473,4 +477,4 @@ The most valuable next implementation steps are:
 
 **Gogal** should be:
 
-> A full-stack, batteries-included, metadata-driven low-code application platform built with Go and JavaScript for teams that want ERP-style power with modern architecture and cleaner developer ergonomics.
+> A full-stack, batteries-included, metadata-driven low-code application platform built with Go, server-rendered HTML, HTMX, and lightweight JavaScript for teams that want ERP-style power with modern architecture and cleaner developer ergonomics.
