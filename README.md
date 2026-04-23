@@ -136,3 +136,4 @@ The API starts on:
 ## Status
 
 This repository is in active foundation phase, building toward a full enterprise framework for business app development in Go and JS.
+# gogal
