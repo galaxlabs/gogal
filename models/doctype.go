@@ -220,6 +220,10 @@ func (d *DocType) Normalize() error {
 			return fmt.Errorf("child table doctypes cannot define nested Table fields")
 		}
 
+		if d.IsSingle && field.FieldType == "Table" {
+			return fmt.Errorf("single doctypes cannot define Table fields")
+		}
+
 		if _, exists := seenFields[field.FieldName]; exists {
 			return fmt.Errorf("duplicate fieldname %q", field.FieldName)
 		}

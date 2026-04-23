@@ -2,6 +2,18 @@ import { useEffect, useMemo, useState } from 'react';
 import { fetchDocTypes, fetchDocTypeMeta } from './lib/api.js';
 import DocTypeBuilder from './components/DocTypeBuilder.jsx';
 import ResourceWorkbench from './components/ResourceWorkbench.jsx';
+import ThemeSettingsPanel from './components/ThemeSettingsPanel.jsx';
+
+const STUDIO_THEME_STORAGE_KEY = 'gogal-ui-studio-theme';
+
+const defaultStudioTheme = {
+  accentColor: '#22d3ee',
+  surfaceOpacity: '0.05',
+  textScale: '1',
+  dialogStyle: 'soft',
+  sidebarWidth: '320',
+  layoutDensity: 'comfortable',
+};
 
 const platformModules = [
   {
@@ -53,6 +65,49 @@ const roadmapCards = [
 
 function formatTime(date, options) {
   return new Intl.DateTimeFormat('en-US', options).format(date);
+}
+
+function hexToRgbChannels(hex) {
+  const normalized = hex.replace('#', '').trim();
+  if (!/^[0-9a-fA-F]{6}$/.test(normalized)) {
+    return '34 211 238';
+  }
+
+  const r = Number.parseInt(normalized.slice(0, 2), 16);
+  const g = Number.parseInt(normalized.slice(2, 4), 16);
+  const b = Number.parseInt(normalized.slice(4, 6), 16);
+  return `${r} ${g} ${b}`;
+}
+
+function resolveDialogRadius(dialogStyle) {
+  switch (dialogStyle) {
+    case 'sharp':
+      return '0.75rem';
+    case 'modern':
+      return '1.25rem';
+    default:
+      return '1.6rem';
+  }
+}
+
+function readStoredStudioTheme() {
+  if (typeof window === 'undefined') {
+    return defaultStudioTheme;
+  }
+
+  try {
+    const raw = window.localStorage.getItem(STUDIO_THEME_STORAGE_KEY);
+    if (!raw) {
+      return defaultStudioTheme;
+    }
+
+    return {
+      ...defaultStudioTheme,
+      ...JSON.parse(raw),
+    };
+  } catch {
+    return defaultStudioTheme;
+  }
 }
 
 function SidebarSkeleton() {
@@ -134,6 +189,9 @@ export default function App() {
   const [search, setSearch] = useState('');
   const [activeModule, setActiveModule] = useState('builder');
   const [now, setNow] = useState(() => new Date());
+	const [navigationOpen, setNavigationOpen] = useState(false);
+	const [themeEditorOpen, setThemeEditorOpen] = useState(false);
+	const [studioTheme, setStudioTheme] = useState(() => readStoredStudioTheme());
 
   useEffect(() => {
     let active = true;
@@ -170,6 +228,10 @@ export default function App() {
     return () => window.clearInterval(timer);
   }, []);
 
+	useEffect(() => {
+		window.localStorage.setItem(STUDIO_THEME_STORAGE_KEY, JSON.stringify(studioTheme));
+	}, [studioTheme]);
+
   useEffect(() => {
     if (!selectedName) {
       setSelectedMeta(null);
@@ -198,6 +260,13 @@ export default function App() {
     return () => {
       active = false;
     };
+  }, [selectedName]);
+
+  useEffect(() => {
+    if (!selectedName) {
+      return;
+    }
+    setNavigationOpen(false);
   }, [selectedName]);
 
     const tenantName = import.meta.env.VITE_TENANT_NAME || 'Gogal';
@@ -269,10 +338,34 @@ export default function App() {
     }
   };
 
+  const themeVars = useMemo(() => ({
+    '--studio-accent-rgb': hexToRgbChannels(studioTheme.accentColor),
+    '--studio-surface-opacity': studioTheme.surfaceOpacity,
+    '--studio-radius': resolveDialogRadius(studioTheme.dialogStyle),
+    '--studio-text-scale': studioTheme.textScale,
+    '--studio-sidebar-width': `${studioTheme.sidebarWidth}px`,
+  }), [studioTheme]);
+
+  const updateStudioTheme = (key, value) => {
+    setStudioTheme((current) => ({ ...current, [key]: value }));
+  };
+
+  const resetStudioTheme = () => {
+    setStudioTheme(defaultStudioTheme);
+  };
+
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.12),transparent_28%),linear-gradient(180deg,#020617_0%,#08111f_48%,#111827_100%)] text-slate-100">
+    <div style={themeVars} className={`min-h-screen text-slate-100 ${studioTheme.layoutDensity === 'compact' ? 'studio-density-compact' : ''}`}>
       <div className="mx-auto flex min-h-screen max-w-[1800px] flex-col lg:flex-row">
-        <aside className="studio-sidebar border-b border-white/8 px-4 py-5 lg:min-h-screen lg:w-[320px] lg:border-b-0 lg:border-r lg:px-5 lg:py-6">
+			<div
+				className={`fixed inset-0 z-30 bg-slate-950/60 backdrop-blur-sm transition lg:hidden ${navigationOpen ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
+				onClick={() => setNavigationOpen(false)}
+				aria-hidden="true"
+			/>
+			<aside
+				style={{ width: `min(88vw, ${studioTheme.sidebarWidth}px)` }}
+				className={`studio-sidebar fixed inset-y-0 left-0 z-40 overflow-y-auto border-r border-white/8 px-4 py-5 transition duration-300 lg:static lg:min-h-screen lg:translate-x-0 lg:px-5 lg:py-6 ${navigationOpen ? 'translate-x-0' : '-translate-x-full'}`}
+			>
           <div className="panel relative overflow-hidden p-5">
             <div className="studio-glow" />
             <div className="relative flex items-start gap-4">
@@ -287,6 +380,13 @@ export default function App() {
                 </p>
               </div>
             </div>
+        <button
+          type="button"
+          onClick={() => setNavigationOpen(false)}
+          className="mt-4 rounded-2xl border border-white/10 bg-white/[0.05] px-3 py-2 text-sm font-semibold text-slate-200 transition hover:bg-white/[0.1] lg:hidden"
+        >
+          Close drawer
+        </button>
           </div>
 
           <div className="mt-5 space-y-5">
@@ -353,13 +453,20 @@ export default function App() {
               </div>
             </div>
           </div>
-        </aside>
+			</aside>
 
         <div className="flex-1">
           <header className="sticky top-0 z-20 border-b border-white/8 bg-slate-950/75 px-4 py-4 backdrop-blur-xl lg:px-6">
             <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
               <div>
                 <div className="flex flex-wrap items-center gap-2">
+                  <button
+						type="button"
+						onClick={() => setNavigationOpen(true)}
+						className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1.5 text-xs font-semibold text-slate-100 transition hover:bg-white/[0.1] lg:hidden"
+					>
+						Drawer
+					</button>
                   <span className="badge">Go backend · /api</span>
                   <span className="badge">Tailwind shell</span>
                   <span className="badge">Touch friendly</span>
@@ -392,6 +499,13 @@ export default function App() {
                     <div className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-100/70">Timezone</div>
                     <div className="mt-1 text-sm text-cyan-50">{timezone}</div>
                   </div>
+                  <button
+						type="button"
+						onClick={() => setThemeEditorOpen(true)}
+						className="rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-white/[0.08] active:scale-95"
+					>
+						Theme
+					</button>
                   <button
                     type="button"
                     className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.05] text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-white/[0.08] active:scale-95"
@@ -518,6 +632,13 @@ export default function App() {
           </main>
         </div>
       </div>
+    <ThemeSettingsPanel
+      open={themeEditorOpen}
+      theme={studioTheme}
+      onChange={updateStudioTheme}
+      onClose={() => setThemeEditorOpen(false)}
+      onReset={resetStudioTheme}
+    />
     </div>
   );
 }

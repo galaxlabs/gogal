@@ -3,7 +3,7 @@
 - Core metadata engine is centered on `DocType` and `DocField` in `models/doctype.go`.
 - Metadata tables are `tab_doctypes` and `tab_docfields`; user-defined doctypes create PostgreSQL storage tables like `tab_customer`.
 - Dynamic metadata APIs exist for `GET /api/doctypes`, `POST /api/doctypes`, `GET /api/doctypes/:name/meta`, and compatibility route `GET /api/resource-meta/:name`.
-- Dynamic document CRUD exists for non-single doctypes: `GET/POST /api/resource/:doctype` and `GET/PUT/DELETE /api/resource/:doctype/:name`.
+- Dynamic document CRUD exists for regular doctypes, and single doctypes now persist through `tab_singles` with dedicated singleton routes.
 - Resource listing supports metadata-aware `search`, `sort_by`, `sort_order`, and `filter_<field>` / `filter_<field>__<op>` query parameters.
 - Supported filter ops include `eq`, `ne`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `isnull`.
 - Resource deletion is soft-delete based through `deleted_at` on generated tables.
@@ -16,6 +16,7 @@
 - `models.PrepareDocumentMutation()` validates payloads, resolves defaults, validates `Link` values, and parses child-table rows before persistence.
 - `GET /api/resource/:doctype/link-search` is implemented in `controllers/link_controller.go` for metadata-aware link suggestions.
 - File upload foundation is implemented through `models/file.go` and `controllers/file_controller.go`.
+- Single DocType runtime support is implemented through `models/single_value.go` and singleton handlers in `controllers/resource_controller.go`.
 - File APIs now include `GET /api/files` and `POST /api/files/upload`; public files are statically served from `/files`.
 - File metadata tracks original/stored names, path, URL, visibility, content type, extension, size, attachment targets, alt text, and JSON attributes.
 - DB bootstrap in `config/db.go` loads `.env` with `godotenv`, falls back to defaults, and auto-migrates `DocType`, `DocField`, and `File`.
@@ -31,7 +32,10 @@
 - Shared frontend metadata helpers live in `frontend/src/lib/metadata.js`.
 - Link-field frontend UX lives in `frontend/src/components/LinkFieldInput.jsx` and now uses `/api/resource/:doctype/link-search` instead of generic listing.
 - Child-table frontend UX exists via `frontend/src/components/ChildTableField.jsx` and `RecordFieldValue.jsx`; current UI supports JSON-backed child-table rendering while native backend table persistence is now in place server-side.
-- Frontend package name remains `studio`; visible branding is moving from older `Gogal Framework Studio` / `Gogal Studio` wording to `UI Studio`.
+- Frontend package name remains `studio`; visible branding is now centered on `UI Studio`.
+- `frontend/src/components/SingleResourceWorkbench.jsx` provides a singleton settings desk for `is_single` doctypes.
+- `frontend/src/components/ThemeSettingsPanel.jsx` adds live theme/layout controls for color, density, text scale, drawer width, and dialog style.
+- The shell navigation now behaves like a drawer on smaller screens instead of a permanently rigid sidebar.
 - CLI foundation lives under `cmd/gogal/` and uses Cobra.
 - `gogal init [bench-name]` scaffolds a bench with `apps/`, `sites/`, `config/`, `www/`, `storage/public`, `storage/private`, and `config/traefik/dynamic`.
 - `sites/common_site_config.json` now carries DB/Redis/base-port plus reverse-proxy settings like `reverse_proxy`, `wildcard_base_domain`, and `traefik_dynamic_dir`.
@@ -47,10 +51,10 @@
 - Product vision is documented in `PLATFORM_VISION.md`: Gogal is positioned as a full-stack, batteries-included, metadata-driven low-code/no-code business platform.
 - Verified command set in this repo includes `go build ./...`, `go build ./cmd/gogal`, and `npm run build` in `frontend/`.
 - Verified on 2026-04-23: Go workspace compiled successfully after the child-table/link/file/rename work.
-- Verified on 2026-04-23: frontend `npm run build` succeeded after Studio branding cleanup and link-search integration.
+- Verified on 2026-04-23: frontend `npm run build` succeeded after UI Studio branding cleanup, theme editor additions, and singleton desk integration.
 - Verified on 2026-04-23: CLI smoke test created a temporary bench and app scaffold successfully, including app-level website and upload folders.
 - Verified on 2026-04-23: `new-site` is idempotent with `--skip-db-setup --no-input` and preserves generated site config values across reruns.
 - Verified on 2026-04-23: `install-app` is idempotent and keeps exactly one app entry in both `installed_apps` and `apps.txt`.
 - Verified earlier on 2026-04-23: browser/UI flow loaded metadata and records successfully, and the visual DocType Builder created a doctype from the Studio UI.
-- Current platform state: metadata engine, resource CRUD, filter/search/sort, UI Studio shell, visual builder, desk UI, bench/site/app/install CLI, link validation/search foundation, file upload foundation, website/domain scaffolding, and backend child-table persistence foundation are all implemented.
+- Current platform state: metadata engine, regular + single document CRUD, filter/search/sort, UI Studio shell, visual builder, singleton settings desk, theme/layout editor, bench/site/app/install CLI, link validation/search foundation, file upload foundation, website/domain scaffolding, and backend child-table persistence foundation are all implemented.
 

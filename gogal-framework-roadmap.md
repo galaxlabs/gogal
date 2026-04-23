@@ -9,20 +9,24 @@
   - Backend child-table foundation with `is_child_table`, `Table` metadata support, transactional child-row save/hydrate/delete logic.
   - Link validation and dedicated `/api/resource/:doctype/link-search` endpoint.
   - File upload foundation with metadata model, upload/list APIs, public static file serving, and attribute storage.
+  - Single DocType runtime CRUD with `tab_singles` persistence, dedicated singleton API routes, and a singleton settings desk in UI Studio.
+  - UI Studio theme/layout editor with live color, density, text scale, drawer-width, and dialog-style controls.
   - Rename baseline completed: Go module is `gogal`, frontend package is `studio`, and visible UI branding is moving to `UI Studio`.
   - Verified builds: `go build ./...`, `go build ./cmd/gogal`, `npm run build`, and CLI smoke tests.
 
 - Partially finished
-  - Native child-table UX in Studio is only partially aligned with backend: frontend still primarily uses JSON-backed child-table rendering patterns.
+  - Native child-table UX in UI Studio is only partially aligned with backend: frontend still primarily uses JSON-backed child-table rendering patterns.
   - Link-field UX is wired to backend link search, but deeper behaviors like richer labels, create-new-linked-record, and advanced query rules are not built yet.
-  - File uploads have backend foundations, but no full Studio file manager, attachment browser, or end-to-end publish workflow yet.
+  - File uploads have backend foundations, but no full UI Studio file manager, attachment browser, or end-to-end publish workflow yet.
+  - Theme editing exists for shell customization, but deeper per-user preference persistence and popup-component theming are still early-stage.
   - Website/domain ecosystem scaffolding exists, but automatic website generation, wildcard routing orchestration, and production-grade publish flow are still partial.
   - Rename cleanup is mostly complete, but docs and older references may still need occasional polishing.
   - `install-app` currently handles registration only; app migrations, DocType import, fixtures, hooks, and lifecycle execution are deferred.
   - Studio roadmap panels exist for automation, scheduler, reporting, QR/barcode, and timezone tools, but these are placeholders rather than full modules.
 
 - Should be built next
-  - Finish native `Table` field support in Studio so frontend forms/lists/editors use backend child-table doctypes directly instead of JSON-mode stopgaps.
+  - Finish native `Table` field support in UI Studio so frontend forms/lists/editors use backend child-table doctypes directly instead of JSON-mode stopgaps.
+  - Add richer singleton UX such as settings groups, configuration audit trails, and safer reset/version flows.
   - Build app installation lifecycle: import DocTypes, run migrations, sync fixtures, and execute app hooks during `install-app`.
   - Add auth, users, roles, permissions, and route protection across API and Studio.
   - Build workflow engine primitives: states, transitions, approvals, assignment, and automation triggers.

@@ -22,6 +22,31 @@ func ListResources(c *gin.Context) {
 		return
 	}
 
+	if docType.IsSingle {
+		record, exists, err := fetchSingleResourceRecord(docType)
+		if err != nil {
+			log.Printf("load single resource for %s failed: %v", docType.Name, err)
+			jsonError(c, http.StatusInternalServerError, "failed_to_get_single_record", "Unable to load single DocType data.", err.Error())
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"data": []map[string]any{record},
+			"meta": gin.H{
+				"doctype":   docType.Name,
+				"is_single": true,
+				"exists":    exists,
+				"limit":     1,
+				"offset":    0,
+				"total":     1,
+				"search":    "",
+				"sort":      "singleton",
+				"filters":   []gin.H{},
+			},
+		})
+		return
+	}
+
 	limit := parsePositiveInt(c.DefaultQuery("limit", "20"), 20, 100)
 	offset := parsePositiveInt(c.DefaultQuery("offset", "0"), 0, 100000)
 	filteredQuery, listMeta, err := applyResourceListOptions(config.DB.Table(docType.StorageTable).Where("deleted_at IS NULL"), docType, c.Request.URL.Query())
@@ -75,6 +100,18 @@ func GetResource(c *gin.Context) {
 		return
 	}
 
+	if docType.IsSingle {
+		record, _, err := fetchSingleResourceRecord(docType)
+		if err != nil {
+			log.Printf("get single record %s failed: %v", docType.Name, err)
+			jsonError(c, http.StatusInternalServerError, "failed_to_get_single_record", "Unable to load single DocType data.", err.Error())
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"data": record})
+		return
+	}
+
 	recordName, err := models.NormalizeDocumentName(c.Param("name"))
 	if err != nil {
 		jsonError(c, http.StatusBadRequest, "invalid_record_name", err.Error(), nil)
@@ -99,6 +136,11 @@ func GetResource(c *gin.Context) {
 func CreateResource(c *gin.Context) {
 	docType, ok := loadDocTypeForResource(c, true)
 	if !ok {
+		return
+	}
+
+	if docType.IsSingle {
+		upsertSingleResource(c, docType, http.StatusCreated)
 		return
 	}
 
@@ -159,6 +201,11 @@ func CreateResource(c *gin.Context) {
 func UpdateResource(c *gin.Context) {
 	docType, ok := loadDocTypeForResource(c, true)
 	if !ok {
+		return
+	}
+
+	if docType.IsSingle {
+		upsertSingleResource(c, docType, http.StatusOK)
 		return
 	}
 
@@ -254,6 +301,11 @@ func DeleteResource(c *gin.Context) {
 		return
 	}
 
+	if docType.IsSingle {
+		deleteSingleResource(c, docType)
+		return
+	}
+
 	recordName, err := models.NormalizeDocumentName(c.Param("name"))
 	if err != nil {
 		jsonError(c, http.StatusBadRequest, "invalid_record_name", err.Error(), nil)
@@ -304,12 +356,63 @@ func loadDocTypeForResource(c *gin.Context, withFields bool) (*models.DocType, b
 		return nil, false
 	}
 
-	if docType.IsSingle {
-		jsonError(c, http.StatusBadRequest, "single_doctype_not_supported", fmt.Sprintf("Dynamic CRUD for single DocType %q is not implemented yet.", docType.Name), nil)
-		return nil, false
+	return docType, true
+}
+
+func GetSingleResource(c *gin.Context) {
+	docType, ok := loadDocTypeForResource(c, true)
+	if !ok {
+		return
 	}
 
-	return docType, true
+	if !docType.IsSingle {
+		jsonError(c, http.StatusBadRequest, "doctype_is_not_single", fmt.Sprintf("DocType %q is not a single DocType.", docType.Name), nil)
+		return
+	}
+
+	record, exists, err := fetchSingleResourceRecord(docType)
+	if err != nil {
+		log.Printf("get dedicated single resource %s failed: %v", docType.Name, err)
+		jsonError(c, http.StatusInternalServerError, "failed_to_get_single_record", "Unable to load single DocType data.", err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": record,
+		"meta": gin.H{
+			"doctype":   docType.Name,
+			"is_single": true,
+			"exists":    exists,
+		},
+	})
+}
+
+func UpdateSingleResource(c *gin.Context) {
+	docType, ok := loadDocTypeForResource(c, true)
+	if !ok {
+		return
+	}
+
+	if !docType.IsSingle {
+		jsonError(c, http.StatusBadRequest, "doctype_is_not_single", fmt.Sprintf("DocType %q is not a single DocType.", docType.Name), nil)
+		return
+	}
+
+	upsertSingleResource(c, docType, http.StatusOK)
+}
+
+func DeleteSingleResource(c *gin.Context) {
+	docType, ok := loadDocTypeForResource(c, false)
+	if !ok {
+		return
+	}
+
+	if !docType.IsSingle {
+		jsonError(c, http.StatusBadRequest, "doctype_is_not_single", fmt.Sprintf("DocType %q is not a single DocType.", docType.Name), nil)
+		return
+	}
+
+	deleteSingleResource(c, docType)
 }
 
 func loadDocTypeMetadata(name string, withFields bool) (*models.DocType, error) {
@@ -331,6 +434,108 @@ func fetchResourceRecord(docType *models.DocType, recordName string) (map[string
 	}
 
 	return record, nil
+}
+
+func fetchSingleResourceRecord(docType *models.DocType) (map[string]any, bool, error) {
+	record, exists, err := models.LoadSingleDocument(config.DB, docType)
+	if err != nil {
+		return nil, false, err
+	}
+	return record, exists, nil
+}
+
+func upsertSingleResource(c *gin.Context, docType *models.DocType, successStatus int) {
+	var payload map[string]any
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		jsonError(c, http.StatusBadRequest, "invalid_payload", "Request body must be valid JSON.", err.Error())
+		return
+	}
+
+	if _, hasName := payload["name"]; hasName {
+		delete(payload, "name")
+	}
+
+	existingRecord, _, err := models.LoadSingleDocument(config.DB, docType)
+	if err != nil {
+		log.Printf("load current single resource %s failed: %v", docType.Name, err)
+		jsonError(c, http.StatusInternalServerError, "failed_to_load_single_record", "Unable to load current single DocType values.", err.Error())
+		return
+	}
+
+	mergedPayload := make(map[string]any, len(docType.Fields))
+	for _, field := range docType.Fields {
+		if !models.IsStoredInParentTable(field) {
+			continue
+		}
+		if value, ok := existingRecord[field.FieldName]; ok {
+			mergedPayload[field.FieldName] = value
+		}
+	}
+	for key, value := range payload {
+		mergedPayload[key] = value
+	}
+
+	prepared, err := models.PrepareDocumentMutation(config.DB, docType, mergedPayload, true)
+	if err != nil {
+		jsonError(c, http.StatusBadRequest, "invalid_single_payload", err.Error(), nil)
+		return
+	}
+
+	if len(prepared.ChildTables) > 0 {
+		jsonError(c, http.StatusBadRequest, "single_child_tables_not_supported", "Single DocTypes cannot persist child table fields.", nil)
+		return
+	}
+
+	var existed bool
+	if err := config.DB.Transaction(func(tx *gorm.DB) error {
+		wasExisting, saveErr := models.SaveSingleDocument(tx, docType, prepared.Values)
+		if saveErr != nil {
+			return saveErr
+		}
+		existed = wasExisting
+		return nil
+	}); err != nil {
+		log.Printf("save single resource %s failed: %v", docType.Name, err)
+		jsonError(c, http.StatusBadRequest, "failed_to_save_single_record", err.Error(), nil)
+		return
+	}
+
+	record, _, err := fetchSingleResourceRecord(docType)
+	if err != nil {
+		log.Printf("reload single resource %s failed: %v", docType.Name, err)
+		jsonError(c, successStatus, "single_record_saved_with_reload_warning", "Single record saved, but could not be reloaded cleanly.", err.Error())
+		return
+	}
+
+	statusCode := successStatus
+	if successStatus == http.StatusCreated && existed {
+		statusCode = http.StatusOK
+	}
+
+	c.JSON(statusCode, gin.H{
+		"message": fmt.Sprintf("Single DocType %q saved successfully.", docType.Name),
+		"data":    record,
+	})
+}
+
+func deleteSingleResource(c *gin.Context, docType *models.DocType) {
+	if err := models.DeleteSingleDocument(config.DB, docType.Name); err != nil {
+		log.Printf("delete single resource %s failed: %v", docType.Name, err)
+		jsonError(c, http.StatusInternalServerError, "failed_to_delete_single_record", "Unable to reset single DocType values.", err.Error())
+		return
+	}
+
+	record, _, err := fetchSingleResourceRecord(docType)
+	if err != nil {
+		log.Printf("reload reset single resource %s failed: %v", docType.Name, err)
+		jsonError(c, http.StatusOK, "single_record_deleted_with_reload_warning", "Single record values were reset, but the default document could not be reloaded cleanly.", err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": fmt.Sprintf("Single DocType %q reset successfully.", docType.Name),
+		"data":    record,
+	})
 }
 
 func extractOrGenerateRecordName(docType *models.DocType, payload map[string]any) (string, error) {

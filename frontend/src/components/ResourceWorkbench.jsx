@@ -3,6 +3,7 @@ import { createResource, deleteResource, fetchResource, fetchResources, updateRe
 import DynamicRecordForm from './DynamicRecordForm.jsx';
 import { findDocTypeImageField, formatFieldValue, resolveFileURL } from '../lib/metadata.js';
 import RecordFieldValue from './RecordFieldValue.jsx';
+import SingleResourceWorkbench from './SingleResourceWorkbench.jsx';
 
 const operatorOptions = [
   { value: 'eq', label: '=' },
@@ -18,6 +19,14 @@ const operatorOptions = [
 ];
 
 export default function ResourceWorkbench({ docType, loading }) {
+  if (docType?.is_single) {
+    return <SingleResourceWorkbench docType={docType} loading={loading} />;
+  }
+
+  return <CollectionResourceWorkbench docType={docType} loading={loading} />;
+}
+
+function CollectionResourceWorkbench({ docType, loading }) {
   const [records, setRecords] = useState([]);
   const [meta, setMeta] = useState(null);
   const [listBusy, setListBusy] = useState(false);

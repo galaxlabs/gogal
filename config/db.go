@@ -41,7 +41,7 @@ func ConnectDB() error {
 		return fmt.Errorf("ping database: %w", err)
 	}
 
-	if err := db.AutoMigrate(&models.DocType{}, &models.DocField{}, &models.File{}); err != nil {
+	if err := db.AutoMigrate(&models.DocType{}, &models.DocField{}, &models.File{}, &models.SingleValue{}); err != nil {
 		return fmt.Errorf("auto migrate metadata tables: %w", err)
 	}
 

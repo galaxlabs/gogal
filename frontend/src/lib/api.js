@@ -71,6 +71,11 @@ export async function fetchResource(doctype, name) {
 	return payload.data;
 }
 
+export async function fetchSingleResource(doctype) {
+  const payload = await request(`/api/resource/${encodeURIComponent(doctype)}/single`);
+  return payload.data;
+}
+
 export async function createResource(doctype, document) {
   const payload = await request(`/api/resource/${encodeURIComponent(doctype)}`, {
     method: 'POST',
@@ -87,8 +92,23 @@ export async function updateResource(doctype, name, document) {
   return payload.data;
 }
 
+export async function updateSingleResource(doctype, document) {
+	const payload = await request(`/api/resource/${encodeURIComponent(doctype)}/single`, {
+		method: 'PUT',
+		body: JSON.stringify(document),
+	});
+	return payload.data;
+}
+
 export async function deleteResource(doctype, name) {
   return request(`/api/resource/${encodeURIComponent(doctype)}/${encodeURIComponent(name)}`, {
     method: 'DELETE',
   });
+}
+
+export async function deleteSingleResource(doctype) {
+  const payload = await request(`/api/resource/${encodeURIComponent(doctype)}/single`, {
+    method: 'DELETE',
+  });
+  return payload.data;
 }

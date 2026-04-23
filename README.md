@@ -170,6 +170,19 @@ This validates the app under `apps/sales/`, appends it to `sites/site1.local/sit
 - configure richer DocType behavior from the builder, including single/child-table flags and attachment-related metadata
 - view query examples for each selected doctype
 
+## Lightweight runtime setup
+
+For a fast production shape, use:
+
+- the compiled Go API binary directly
+- PostgreSQL
+- a reverse proxy like Caddy / Nginx / Traefik
+- Supervisor or systemd for process management
+
+Redis is optional until you add queues, caching, background jobs, or multi-instance coordination.
+
+See `docs/fast-runtime-setup.md` for the detailed recommendation and sample configs under `deploy/`.
+
 ## Example: Create a DocType
 
 ```json
