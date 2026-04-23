@@ -338,6 +338,8 @@ export default function App() {
     }
   };
 
+  const builderFocusedLayout = activeModule === 'builder';
+
   const themeVars = useMemo(() => ({
     '--studio-accent-rgb': hexToRgbChannels(studioTheme.accentColor),
     '--studio-surface-opacity': studioTheme.surfaceOpacity,
@@ -518,7 +520,7 @@ export default function App() {
             </div>
           </header>
 
-          <main className="grid gap-6 px-4 py-6 lg:px-6 xl:grid-cols-[minmax(0,1.45fr)_360px]">
+          <main className={`grid gap-6 px-4 py-6 lg:px-6 ${builderFocusedLayout ? 'mx-auto w-full max-w-7xl' : 'xl:grid-cols-[minmax(0,1.45fr)_360px]'}`}>
             <section className="space-y-6">
               {error ? (
                 <div className="rounded-2xl border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
@@ -526,7 +528,7 @@ export default function App() {
                 </div>
               ) : null}
 
-              <div className="grid gap-4 md:grid-cols-3">
+              <div className={`grid gap-4 ${builderFocusedLayout ? 'md:grid-cols-2 xl:grid-cols-3' : 'md:grid-cols-3'}`}>
                 <StatusCard title="UI Studio readiness" accent="emerald">
                   <div className="text-3xl font-semibold text-white">{docTypes.length}</div>
                   <p className="mt-2 text-sm leading-6 text-slate-300">DocTypes available to drive metadata-first forms, lists, and desk navigation.</p>
@@ -552,6 +554,7 @@ export default function App() {
 				<ResourceWorkbench docType={selectedMeta} loading={metaLoading} />
             </section>
 
+            {!builderFocusedLayout ? (
             <aside className="space-y-6">
               <section className="panel p-5">
                 <div className="flex items-center justify-between gap-3">
@@ -629,6 +632,7 @@ export default function App() {
                 </div>
               </section>
             </aside>
+            ) : null}
           </main>
         </div>
       </div>
