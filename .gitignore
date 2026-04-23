@@ -1,0 +1,21 @@
+# Environment
+.env
+
+# Binaries
+gogal-framework
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Go build/test output
+*.test
+*.out
+coverage.out
+
+# Editors / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
