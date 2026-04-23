@@ -156,11 +156,18 @@ function CollectionResourceWorkbench({ docType, loading }) {
     return [...preferred, ...fallback].slice(0, 5);
   }, [docType]);
 
+  const listPreviewFields = useMemo(() => listFields.slice(0, 3), [listFields]);
+
   const detailFields = useMemo(() => (docType?.fields || []).filter((field) => !field.hidden), [docType]);
 
   const selectedRecordSummary = useMemo(
     () => records.find((record) => record.name === selectedRecordName) || null,
     [records, selectedRecordName],
+  );
+
+  const listGridTemplate = useMemo(
+    () => ({ gridTemplateColumns: `minmax(0, 1.4fr) ${listPreviewFields.map(() => 'minmax(0, 1fr)').join(' ')}` }),
+    [listPreviewFields],
   );
 
   const profileImageField = useMemo(() => findDocTypeImageField(docType), [docType]);
@@ -245,8 +252,13 @@ function CollectionResourceWorkbench({ docType, loading }) {
       <div className="panel p-5">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
           <div>
-            <h2 className="text-xl font-semibold text-white">{docType.label} desk</h2>
-            <p className="mt-1 text-sm text-slate-400">Metadata-driven list, generated form renderer, and record detail desk layered directly into Studio.</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="badge">{docType.module || 'Core'} module</span>
+              <span className="badge">Frappe-style desk</span>
+              {docType.is_single ? <span className="badge">single</span> : null}
+            </div>
+            <h2 className="mt-3 text-xl font-semibold text-white">{docType.label} desk</h2>
+            <p className="mt-1 text-sm text-slate-400">Compact list view on the left, generated form/detail desk on the right, aligned with Frappe’s record-first navigation model.</p>
           </div>
           <div className="flex flex-wrap gap-2 text-xs text-slate-300">
             <span className="badge">{records.length} visible rows</span>
@@ -255,7 +267,7 @@ function CollectionResourceWorkbench({ docType, loading }) {
           </div>
         </div>
 
-        <div className="mt-5 grid gap-3 xl:grid-cols-[minmax(0,1.3fr)_repeat(4,minmax(0,0.9fr))]">
+        <div className="mt-5 grid gap-3 xl:grid-cols-[minmax(0,1.4fr)_repeat(4,minmax(0,0.9fr))]">
           <label className="grid gap-2">
             <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Search</span>
             <input className="field" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search name or text-like fields" />
@@ -313,65 +325,69 @@ function CollectionResourceWorkbench({ docType, loading }) {
         {error ? <div className="mt-4 rounded-xl border border-rose-400/20 bg-rose-500/10 px-3 py-2 text-sm text-rose-100">{error}</div> : null}
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(320px,0.72fr)_minmax(0,1.28fr)]">
+      <div className="grid gap-4 xl:grid-cols-[minmax(320px,0.76fr)_minmax(0,1.24fr)]">
       <div className="panel overflow-hidden">
         <div className="border-b border-white/10 px-5 py-4">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-          <h3 className="text-lg font-semibold text-white">Live records</h3>
-          <p className="mt-1 text-sm text-slate-400">Select a row to open the record detail desk, or create a fresh document.</p>
-          </div>
-          <button
-          type="button"
-          onClick={() => {
-            setDeskMode('create');
-            setSelectedRecordName('');
-            setSelectedRecord(null);
-          }}
-          className="rounded-xl bg-cyan-500 px-3 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400"
-          >
-          New record
-          </button>
-        </div>
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h3 className="text-lg font-semibold text-white">List view</h3>
+              <p className="mt-1 text-sm text-slate-400">Compact rows, fast scan, and direct jump into form/detail mode.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setDeskMode('create');
+                setSelectedRecordName('');
+                setSelectedRecord(null);
+              }}
+              className="rounded-xl bg-cyan-500 px-3 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400"
+            >
+              New record
+            </button>
           </div>
 
-        <div className="max-h-[820px] space-y-3 overflow-y-auto p-4">
-        {listBusy ? (
-          Array.from({ length: 5 }).map((_, index) => <div key={index} className="skeleton-line h-24 rounded-3xl" />)
-        ) : records.length > 0 ? (
-          records.map((record) => (
-          <button
-            key={record.name}
-            type="button"
-            onClick={() => handleSelectRecord(record.name)}
-            className={`w-full rounded-3xl border p-4 text-left transition hover:border-white/15 hover:bg-white/[0.06] ${
-            selectedRecordName === record.name && deskMode !== 'create'
-              ? 'border-cyan-400/30 bg-cyan-500/10 shadow-lg shadow-cyan-500/10'
-              : 'border-white/10 bg-white/[0.03]'
-            }`}
-          >
-            <div className="flex items-start justify-between gap-3">
-            <div>
-              <div className="text-sm font-semibold text-white">{record.name}</div>
-              <div className="mt-1 text-xs uppercase tracking-[0.22em] text-slate-500">{docType.label}</div>
-            </div>
-            <span className="rounded-full border border-white/10 px-2 py-1 text-[11px] text-slate-300">Updated</span>
-            </div>
-            <div className="mt-4 grid gap-2">
-            {listFields.map((field) => (
-              <div key={`${record.name}-${field.fieldname}`} className="flex items-center justify-between gap-3 text-sm">
-              <span className="text-slate-500">{field.label}</span>
-              <span className="max-w-[58%] truncate text-right text-slate-200">{formatFieldValue(field, record[field.fieldname])}</span>
-              </div>
+          <div style={listGridTemplate} className="mt-4 hidden items-center gap-3 border-t border-white/10 pt-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500 md:grid">
+            <span>Name</span>
+            {listPreviewFields.map((field) => (
+              <span key={`header-${field.fieldname}`} className="truncate">{field.label}</span>
             ))}
-            </div>
-          </button>
-          ))
-        ) : (
-          <div className="rounded-3xl border border-dashed border-white/10 bg-white/[0.03] px-5 py-8 text-center text-sm leading-6 text-slate-400">
-          No records match the current search/filter state. Create the first record to populate this desk.
           </div>
-        )}
+        </div>
+
+        <div className="max-h-[820px] overflow-y-auto">
+          {listBusy ? (
+            <div className="space-y-3 p-4">
+              {Array.from({ length: 5 }).map((_, index) => <div key={index} className="skeleton-line h-18 rounded-2xl" />)}
+            </div>
+          ) : records.length > 0 ? (
+            records.map((record) => (
+              <button
+                key={record.name}
+                type="button"
+                onClick={() => handleSelectRecord(record.name)}
+                style={listGridTemplate}
+                className={`grid w-full items-center gap-3 border-b border-white/6 px-4 py-3 text-left transition hover:bg-white/[0.05] ${
+                  selectedRecordName === record.name && deskMode !== 'create' ? 'bg-cyan-500/10' : 'bg-transparent'
+                }`}
+              >
+                <div className="min-w-0">
+                  <div className="truncate text-sm font-semibold text-white">{record.name}</div>
+                  <div className="mt-1 text-[11px] uppercase tracking-[0.2em] text-slate-500">{docType.label}</div>
+                </div>
+                {listPreviewFields.map((field) => (
+                  <div key={`${record.name}-${field.fieldname}`} className="min-w-0 text-sm text-slate-300">
+                    <div className="truncate">{formatFieldValue(field, record[field.fieldname])}</div>
+                  </div>
+                ))}
+              </button>
+            ))
+          ) : (
+            <div className="p-4">
+              <div className="rounded-3xl border border-dashed border-white/10 bg-white/[0.03] px-5 py-8 text-center text-sm leading-6 text-slate-400">
+                No records match the current search/filter state. Create the first record to populate this desk.
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -412,7 +428,7 @@ function CollectionResourceWorkbench({ docType, loading }) {
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="badge">Record detail desk</span>
+              <span className="badge">Form view</span>
               <span className="badge">Metadata rendered</span>
             </div>
             <h3 className="mt-3 text-2xl font-semibold text-white">{selectedRecord.name}</h3>

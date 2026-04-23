@@ -21,26 +21,35 @@ var reservedColumnNames = map[string]struct{}{
 }
 
 var supportedFieldTypes = map[string]string{
-	"Attach":       "TEXT",
-	"Attach Image": "TEXT",
-	"Check":        "BOOLEAN",
-	"Currency":     "NUMERIC(18,6)",
-	"Data":         "TEXT",
-	"Date":         "DATE",
-	"Datetime":     "TIMESTAMPTZ",
-	"DynamicLink":  "TEXT",
-	"Float":        "NUMERIC(18,6)",
-	"Image":        "TEXT",
-	"Int":          "INTEGER",
-	"JSON":         "JSONB",
-	"Link":         "TEXT",
-	"Long Text":    "TEXT",
-	"Percent":      "NUMERIC(8,4)",
-	"Select":       "TEXT",
-	"Small Text":   "TEXT",
-	"Table":        "",
-	"Text":         "TEXT",
-	"Time":         "TIME",
+	"Attach":        "TEXT",
+	"Attach Image":  "TEXT",
+	"Check":         "BOOLEAN",
+	"Column Break":  "",
+	"Currency":      "NUMERIC(18,6)",
+	"Data":          "TEXT",
+	"Date":          "DATE",
+	"Datetime":      "TIMESTAMPTZ",
+	"DynamicLink":   "TEXT",
+	"Float":         "NUMERIC(18,6)",
+	"Image":         "TEXT",
+	"Int":           "INTEGER",
+	"JSON":          "JSONB",
+	"Link":          "TEXT",
+	"Long Text":     "TEXT",
+	"Percent":       "NUMERIC(8,4)",
+	"Section Break": "",
+	"Select":        "TEXT",
+	"Small Text":    "TEXT",
+	"Table":         "",
+	"Tab Break":     "",
+	"Text":          "TEXT",
+	"Time":          "TIME",
+}
+
+var layoutFieldTypes = map[string]struct{}{
+	"Tab Break":     {},
+	"Section Break": {},
+	"Column Break":  {},
 }
 
 type CreateDocTypeRequest struct {
@@ -89,6 +98,7 @@ type DocField struct {
 	FieldName    string         `gorm:"size:140;not null;uniqueIndex:idx_docfield_doctype_field" json:"fieldname"`
 	Label        string         `gorm:"size:140;not null" json:"label"`
 	FieldType    string         `gorm:"size:64;not null" json:"fieldtype"`
+	Description  string         `gorm:"type:text" json:"description,omitempty"`
 	Options      string         `gorm:"type:text" json:"options,omitempty"`
 	DefaultValue string         `gorm:"column:default_value;type:text" json:"default,omitempty"`
 	Required     bool           `gorm:"default:false" json:"reqd"`
@@ -259,6 +269,7 @@ func (f *DocField) Normalize() error {
 	f.FieldName = NormalizeIdentifier(f.FieldName)
 	f.Label = strings.TrimSpace(f.Label)
 	f.FieldType = strings.TrimSpace(f.FieldType)
+	f.Description = strings.TrimSpace(f.Description)
 	f.Options = strings.TrimSpace(f.Options)
 	f.DefaultValue = strings.TrimSpace(f.DefaultValue)
 
@@ -284,12 +295,22 @@ func (f *DocField) Normalize() error {
 		}
 	}
 
+	if f.Hidden && f.Required && f.DefaultValue == "" {
+		return fmt.Errorf("%s (%s) cannot be hidden and mandatory without any default value", f.Label, f.FieldName)
+	}
+
 	if f.FieldType == "Table" {
 		if f.Unique {
 			return fmt.Errorf("Table fields cannot be marked unique")
 		}
 		if f.DefaultValue != "" {
 			return fmt.Errorf("Table fields cannot define a default value")
+		}
+	}
+
+	if f.InListView {
+		if f.FieldType == "Attach Image" || f.FieldType == "Table" || IsLayoutFieldType(f.FieldType) {
+			return fmt.Errorf("'In List View' is not allowed for field %s (%s) of type %s", f.Label, f.FieldName, f.FieldType)
 		}
 	}
 
@@ -347,10 +368,18 @@ func FieldDatabaseType(fieldType string) (string, bool) {
 }
 
 func IsStoredInParentTable(field DocField) bool {
-	return field.FieldType != "Table"
+	return field.FieldType != "Table" && !IsLayoutFieldType(field.FieldType)
+}
+
+func IsLayoutFieldType(fieldType string) bool {
+	_, ok := layoutFieldTypes[fieldType]
+	return ok
 }
 
 func ResolveTargetDocTypeName(field DocField) string {
+	if field.FieldType != "Link" && field.FieldType != "Table" {
+		return ""
+	}
 	return strings.TrimSpace(field.Options)
 }
 
@@ -410,6 +439,7 @@ func SystemDocTypes() []DocType {
 				{FieldName: "fieldname", Label: "Field Name", FieldType: "Data", Required: true},
 				{FieldName: "label", Label: "Label", FieldType: "Data", Required: true},
 				{FieldName: "fieldtype", Label: "Field Type", FieldType: "Select", Required: true},
+				{FieldName: "description", Label: "Description", FieldType: "Text"},
 				{FieldName: "options", Label: "Options", FieldType: "Text"},
 				{FieldName: "default_value", Label: "Default Value", FieldType: "Data"},
 				{FieldName: "reqd", Label: "Required", FieldType: "Check"},

@@ -1,0 +1,361 @@
+{{ define "doctype_builder.html" }}
+<section class="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)_320px]">
+  <aside class="space-y-4">
+    <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">DocType</p>
+          <h3 class="mt-2 text-lg font-semibold text-slate-900">Builder</h3>
+        </div>
+        <span class="rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700">Scaffold</span>
+      </div>
+      <p class="mt-3 text-sm leading-6 text-slate-600">A server-rendered base for Gogal Studio. Add fields from the left, edit properties on the right, and post the resulting payload with HTMX.</p>
+    </section>
+
+    <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Field Library</p>
+          <h3 class="mt-2 text-base font-semibold text-slate-900">Basic fields</h3>
+        </div>
+      </div>
+      <div class="mt-4 grid gap-2" id="field-library">
+        <button type="button" data-field-type="Data" class="builder-field-type rounded-2xl border border-slate-200 px-4 py-3 text-left transition hover:border-sky-300 hover:bg-sky-50">
+          <span class="block text-sm font-semibold text-slate-900">Data</span>
+          <span class="mt-1 block text-xs text-slate-500">Short text, code, or title.</span>
+        </button>
+        <button type="button" data-field-type="Text" class="builder-field-type rounded-2xl border border-slate-200 px-4 py-3 text-left transition hover:border-sky-300 hover:bg-sky-50">
+          <span class="block text-sm font-semibold text-slate-900">Text</span>
+          <span class="mt-1 block text-xs text-slate-500">Longer descriptions and notes.</span>
+        </button>
+        <button type="button" data-field-type="Check" class="builder-field-type rounded-2xl border border-slate-200 px-4 py-3 text-left transition hover:border-sky-300 hover:bg-sky-50">
+          <span class="block text-sm font-semibold text-slate-900">Check</span>
+          <span class="mt-1 block text-xs text-slate-500">Boolean true/false field.</span>
+        </button>
+        <button type="button" data-field-type="Select" class="builder-field-type rounded-2xl border border-slate-200 px-4 py-3 text-left transition hover:border-sky-300 hover:bg-sky-50">
+          <span class="block text-sm font-semibold text-slate-900">Select</span>
+          <span class="mt-1 block text-xs text-slate-500">Multi-option dropdown.</span>
+        </button>
+        <button type="button" data-field-type="Link" class="builder-field-type rounded-2xl border border-slate-200 px-4 py-3 text-left transition hover:border-sky-300 hover:bg-sky-50">
+          <span class="block text-sm font-semibold text-slate-900">Link</span>
+          <span class="mt-1 block text-xs text-slate-500">Reference another DocType.</span>
+        </button>
+        <button type="button" data-field-type="Attach" class="builder-field-type rounded-2xl border border-slate-200 px-4 py-3 text-left transition hover:border-sky-300 hover:bg-sky-50">
+          <span class="block text-sm font-semibold text-slate-900">Attach</span>
+          <span class="mt-1 block text-xs text-slate-500">File or media URL.</span>
+        </button>
+      </div>
+    </section>
+  </aside>
+
+  <section class="rounded-3xl border border-slate-200 bg-white shadow-sm">
+    <form id="doctype-builder-form" class="flex h-full flex-col" hx-post="/desk/doctype-builder" hx-target="#builder-response" hx-swap="innerHTML">
+      <div class="border-b border-slate-200 px-6 py-5">
+        <div class="grid gap-4 md:grid-cols-2">
+          <label class="grid gap-2">
+            <span class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">DocType name</span>
+            <input name="doctype" id="doctype-name" type="text" class="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100" placeholder="SalesInvoice" />
+          </label>
+          <label class="grid gap-2">
+            <span class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Label</span>
+            <input name="label" id="doctype-label" type="text" class="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100" placeholder="Sales Invoice" />
+          </label>
+          <label class="grid gap-2">
+            <span class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Module</span>
+            <input name="module" type="text" value="Core" class="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100" />
+          </label>
+          <label class="grid gap-2 md:col-span-2">
+            <span class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Description</span>
+            <textarea name="description" rows="3" class="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100" placeholder="Metadata-driven business object"></textarea>
+          </label>
+        </div>
+      </div>
+
+      <div class="grid flex-1 gap-6 px-6 py-5 lg:grid-cols-[minmax(0,1.3fr)_minmax(260px,320px)]">
+        <div class="space-y-4">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Canvas</p>
+              <h3 class="mt-1 text-lg font-semibold text-slate-900">Field list</h3>
+            </div>
+            <button type="button" id="add-section-button" class="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-sky-300 hover:bg-sky-50">+ Section</button>
+          </div>
+
+          <div id="builder-canvas" class="min-h-[360px] rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-4">
+            <div class="mb-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
+              Click a field type on the left to add it here. Drag sorting is ready to be enhanced with SortableJS.
+            </div>
+            <div id="builder-fields" class="space-y-3"></div>
+          </div>
+        </div>
+
+        <aside class="space-y-4">
+          <section class="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+            <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Field properties</p>
+            <div id="empty-properties" class="mt-3 rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-6 text-sm text-slate-500">
+              Select a field to edit its properties.
+            </div>
+            <div id="properties-panel" class="mt-4 hidden space-y-3">
+              <label class="grid gap-2">
+                <span class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Field label</span>
+                <input id="field-label" type="text" class="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100" />
+              </label>
+              <label class="grid gap-2">
+                <span class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Field name</span>
+                <input id="field-name" type="text" class="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100" />
+              </label>
+              <label class="grid gap-2">
+                <span class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Field type</span>
+                <input id="field-type" type="text" class="rounded-2xl border border-slate-200 bg-slate-100 px-4 py-3 text-sm text-slate-500" readonly />
+              </label>
+              <label class="grid gap-2">
+                <span class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Description</span>
+                <textarea id="field-description" rows="3" class="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"></textarea>
+              </label>
+              <label class="grid gap-2">
+                <span class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Options</span>
+                <textarea id="field-options" rows="3" class="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100" placeholder="Option 1&#10;Option 2 or target DocType"></textarea>
+              </label>
+              <label class="grid gap-2">
+                <span class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Default</span>
+                <input id="field-default" type="text" class="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100" />
+              </label>
+              <div class="grid gap-2 sm:grid-cols-2">
+                <label class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
+                  <input id="field-reqd" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500" /> Mandatory
+                </label>
+                <label class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
+                  <input id="field-unique" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500" /> Unique
+                </label>
+              </div>
+            </div>
+          </section>
+        </aside>
+      </div>
+
+      <input type="hidden" name="fields_json" id="fields-json" value="[]" />
+
+      <div class="border-t border-slate-200 px-6 py-4">
+        <div id="builder-response" class="mb-4"></div>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="text-sm text-slate-500">This scaffold posts HTML responses back through HTMX and keeps all state in a small vanilla-JS builder store.</div>
+          <button type="submit" class="inline-flex items-center rounded-2xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-700">
+            Save DocType Draft
+          </button>
+        </div>
+      </div>
+    </form>
+  </section>
+</section>
+
+<script>
+(function () {
+  const builderRoot = document.getElementById('doctype-builder-form');
+  if (!builderRoot || builderRoot.dataset.initialized === 'true') {
+    return;
+  }
+  builderRoot.dataset.initialized = 'true';
+
+  const fieldButtons = Array.from(document.querySelectorAll('.builder-field-type'));
+  const fieldsContainer = document.getElementById('builder-fields');
+  const hiddenInput = document.getElementById('fields-json');
+  const emptyProperties = document.getElementById('empty-properties');
+  const propertiesPanel = document.getElementById('properties-panel');
+  const addSectionButton = document.getElementById('add-section-button');
+
+  const propertyInputs = {
+    label: document.getElementById('field-label'),
+    fieldname: document.getElementById('field-name'),
+    fieldtype: document.getElementById('field-type'),
+    description: document.getElementById('field-description'),
+    options: document.getElementById('field-options'),
+    default: document.getElementById('field-default'),
+    reqd: document.getElementById('field-reqd'),
+    unique: document.getElementById('field-unique')
+  };
+
+  const state = {
+    fields: [],
+    selectedId: null,
+    sectionCount: 1
+  };
+
+  function slugify(value) {
+    return String(value || '')
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '');
+  }
+
+  function syncPayload() {
+    hiddenInput.value = JSON.stringify(state.fields.map((field, index) => ({
+      label: field.label,
+      fieldname: field.fieldname,
+      fieldtype: field.fieldtype,
+      description: field.description,
+      options: field.options,
+      default: field.default,
+      reqd: field.reqd,
+      unique: field.unique,
+      sort_order: index + 1
+    })));
+  }
+
+  function renderFields() {
+    fieldsContainer.innerHTML = '';
+
+    if (!state.fields.length) {
+      const empty = document.createElement('div');
+      empty.className = 'rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-8 text-center text-sm text-slate-500';
+      empty.textContent = 'No fields added yet.';
+      fieldsContainer.appendChild(empty);
+      syncPayload();
+      return;
+    }
+
+    state.fields.forEach((field) => {
+      const row = document.createElement('button');
+      row.type = 'button';
+      row.className = `block w-full rounded-2xl border px-4 py-3 text-left transition ${state.selectedId === field.id ? 'border-sky-300 bg-sky-50' : 'border-slate-200 bg-white hover:border-slate-300'}`;
+      row.innerHTML = `
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <div class="text-sm font-semibold text-slate-900">${field.label || 'Untitled Field'}</div>
+            <div class="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">${field.fieldtype} · ${field.fieldname}</div>
+          </div>
+          <span class="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">Field</span>
+        </div>
+      `;
+      row.addEventListener('click', function () {
+        state.selectedId = field.id;
+        renderFields();
+        renderProperties();
+      });
+      fieldsContainer.appendChild(row);
+    });
+
+    syncPayload();
+  }
+
+  function renderProperties() {
+    const selected = state.fields.find((field) => field.id === state.selectedId);
+    if (!selected) {
+      emptyProperties.classList.remove('hidden');
+      propertiesPanel.classList.add('hidden');
+      return;
+    }
+
+    emptyProperties.classList.add('hidden');
+    propertiesPanel.classList.remove('hidden');
+    propertyInputs.label.value = selected.label || '';
+    propertyInputs.fieldname.value = selected.fieldname || '';
+    propertyInputs.fieldtype.value = selected.fieldtype || '';
+    propertyInputs.description.value = selected.description || '';
+    propertyInputs.options.value = selected.options || '';
+    propertyInputs.default.value = selected.default || '';
+    propertyInputs.reqd.checked = Boolean(selected.reqd);
+    propertyInputs.unique.checked = Boolean(selected.unique);
+  }
+
+  function addField(fieldtype) {
+    const index = state.fields.length + 1;
+    const label = `${fieldtype} ${index}`;
+    const field = {
+      id: `field-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      fieldtype: fieldtype,
+      label: label,
+      fieldname: slugify(label),
+      description: '',
+      options: '',
+      default: '',
+      reqd: false,
+      unique: false
+    };
+    state.fields.push(field);
+    state.selectedId = field.id;
+    renderFields();
+    renderProperties();
+  }
+
+  function updateSelectedField(key, value) {
+    const selected = state.fields.find((field) => field.id === state.selectedId);
+    if (!selected) {
+      return;
+    }
+    selected[key] = value;
+    if (key === 'label' && (!selected.fieldname || selected.fieldname.startsWith('data_') || selected.fieldname.startsWith('text_'))) {
+      selected.fieldname = slugify(value);
+      propertyInputs.fieldname.value = selected.fieldname;
+    }
+    renderFields();
+    syncPayload();
+  }
+
+  fieldButtons.forEach((button) => {
+    button.addEventListener('click', function () {
+      addField(button.dataset.fieldType);
+    });
+  });
+
+  addSectionButton.addEventListener('click', function () {
+    state.sectionCount += 1;
+    const field = {
+      id: `field-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      fieldtype: 'Section Break',
+      label: `Section ${state.sectionCount}`,
+      fieldname: `section_break_${state.sectionCount}`,
+      description: '',
+      options: '',
+      default: '',
+      reqd: false,
+      unique: false
+    };
+    state.fields.push(field);
+    state.selectedId = field.id;
+    renderFields();
+    renderProperties();
+  });
+
+  propertyInputs.label.addEventListener('input', function (event) {
+    updateSelectedField('label', event.target.value);
+  });
+  propertyInputs.fieldname.addEventListener('input', function (event) {
+    updateSelectedField('fieldname', slugify(event.target.value));
+  });
+  propertyInputs.description.addEventListener('input', function (event) {
+    updateSelectedField('description', event.target.value);
+  });
+  propertyInputs.options.addEventListener('input', function (event) {
+    updateSelectedField('options', event.target.value);
+  });
+  propertyInputs.default.addEventListener('input', function (event) {
+    updateSelectedField('default', event.target.value);
+  });
+  propertyInputs.reqd.addEventListener('change', function (event) {
+    updateSelectedField('reqd', event.target.checked);
+  });
+  propertyInputs.unique.addEventListener('change', function (event) {
+    updateSelectedField('unique', event.target.checked);
+  });
+
+  Sortable.create(fieldsContainer, {
+    animation: 150,
+    ghostClass: 'opacity-50',
+    onEnd: function (event) {
+      if (event.oldIndex == null || event.newIndex == null || event.oldIndex === event.newIndex) {
+        return;
+      }
+      const moved = state.fields.splice(event.oldIndex, 1)[0];
+      state.fields.splice(event.newIndex, 0, moved);
+      renderFields();
+      renderProperties();
+    }
+  });
+
+  syncPayload();
+  renderFields();
+  renderProperties();
+})();
+</script>
+{{ end }}
