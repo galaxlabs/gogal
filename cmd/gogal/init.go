@@ -59,7 +59,7 @@ This command is idempotent. Running it again updates missing directories and mer
 			cmd.Printf("Common site config: %s\n", result.CommonSiteConfigPath)
 			cmd.Println("Next steps:")
 			cmd.Println("  1. cd into the bench directory")
-			cmd.Println("  2. run `gogal new-app <app-name>` once app scaffolding is implemented")
+			cmd.Println("  2. run `gogal new-app <app-name>` to scaffold your first installable module package")
 			cmd.Println("  3. run `gogal new-site <site-name>` to create your first tenant")
 
 			return nil

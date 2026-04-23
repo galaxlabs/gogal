@@ -23,6 +23,7 @@ It takes inspiration from systems like Frappe and Odoo, but follows a Go-first a
 
 - Metadata engine for `DocType` and `DocField`
 - Automatic PostgreSQL table generation for non-single doctypes
+- Cobra CLI for bench management and scaffolding
 - Seeded system doctypes:
   - `DocType`
   - `DocField`
@@ -118,6 +119,36 @@ The frontend starts on:
 - `http://127.0.0.1:5173`
 
 By default, Vite proxies `/api` requests to `http://127.0.0.1:8080`.
+
+## CLI scaffolding
+
+The repository now includes a Cobra-based CLI under `cmd/gogal/`.
+
+### Initialize a bench
+
+```bash
+go run ./cmd/gogal init ./my-bench
+```
+
+### Scaffold a new app
+
+```bash
+go run ./cmd/gogal new-app sales --bench ./my-bench
+```
+
+This creates an installable app package under `apps/sales/` with:
+
+- `app.json`
+- backend hooks/controllers/services stubs
+- frontend page/component entrypoints
+- `modules/<module>/doctypes/` for owned DocType JSON files
+- fixtures and migrations folders
+
+### Scaffold a new site
+
+```bash
+go run ./cmd/gogal new-site site1.local --bench ./my-bench --skip-db-setup --no-input
+```
 
 ### Current frontend capabilities
 

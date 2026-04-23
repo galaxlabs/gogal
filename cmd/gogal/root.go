@@ -12,6 +12,8 @@ func newRootCommand() *cobra.Command {
 	}
 
 	rootCmd.AddCommand(newInitCommand())
+	rootCmd.AddCommand(newNewAppCommand())
+	rootCmd.AddCommand(newNewSiteCommand())
 
 	return rootCmd
 }
