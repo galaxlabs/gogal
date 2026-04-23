@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -23,19 +24,23 @@ func ListResources(c *gin.Context) {
 
 	limit := parsePositiveInt(c.DefaultQuery("limit", "20"), 20, 100)
 	offset := parsePositiveInt(c.DefaultQuery("offset", "0"), 0, 100000)
+	filteredQuery, listMeta, err := applyResourceListOptions(config.DB.Table(docType.StorageTable).Where("deleted_at IS NULL"), docType, c.Request.URL.Query())
+	if err != nil {
+		jsonError(c, http.StatusBadRequest, "invalid_list_query", err.Error(), nil)
+		return
+	}
 
 	var total int64
-	if err := config.DB.Table(docType.StorageTable).Where("deleted_at IS NULL").Count(&total).Error; err != nil {
+	if err := filteredQuery.Session(&gorm.Session{}).Count(&total).Error; err != nil {
 		log.Printf("count records for %s failed: %v", docType.Name, err)
 		jsonError(c, http.StatusInternalServerError, "failed_to_count_records", "Unable to count records.", err.Error())
 		return
 	}
 
 	records := make([]map[string]any, 0)
-	if err := config.DB.Table(docType.StorageTable).
+	if err := filteredQuery.Session(&gorm.Session{}).
 		Select(models.DocumentSelectColumns(docType)).
-		Where("deleted_at IS NULL").
-		Order("updated_at DESC, id DESC").
+		Order(listMeta["sort"].(string)).
 		Limit(limit).
 		Offset(offset).
 		Find(&records).Error; err != nil {
@@ -51,6 +56,9 @@ func ListResources(c *gin.Context) {
 			"limit":   limit,
 			"offset":  offset,
 			"total":   total,
+			"search":  listMeta["search"],
+			"sort":    listMeta["sort"],
+			"filters": listMeta["filters"],
 		},
 	})
 }
@@ -305,4 +313,216 @@ func parsePositiveInt(raw string, fallback int, max int) int {
 		return max
 	}
 	return parsed
+}
+
+func applyResourceListOptions(tx *gorm.DB, docType *models.DocType, queryValues url.Values) (*gorm.DB, gin.H, error) {
+	filteredQuery, appliedFilters, err := applyResourceFilters(tx, docType, queryValues)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	searchedQuery, searchTerm := applyResourceSearch(filteredQuery, docType, queryValues.Get("search"))
+	sortClause, err := normalizeResourceSort(docType, queryValues.Get("sort_by"), queryValues.Get("sort_order"))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return searchedQuery, gin.H{
+		"filters": appliedFilters,
+		"search":  searchTerm,
+		"sort":    sortClause,
+	}, nil
+}
+
+func applyResourceFilters(tx *gorm.DB, docType *models.DocType, queryValues url.Values) (*gorm.DB, []gin.H, error) {
+	appliedFilters := make([]gin.H, 0)
+	filteredQuery := tx
+
+	for key, rawValues := range queryValues {
+		if !strings.HasPrefix(strings.ToLower(key), "filter_") {
+			continue
+		}
+
+		fieldName, operator := parseFilterKey(key)
+		field, ok := models.QueryableField(docType, fieldName)
+		if !ok {
+			return nil, nil, fmt.Errorf("field %q cannot be filtered", fieldName)
+		}
+
+		normalizedOperator, err := normalizeFilterOperator(operator)
+		if err != nil {
+			return nil, nil, fmt.Errorf("filter %q: %w", key, err)
+		}
+
+		filteredQuery, err = applyFilterCondition(filteredQuery, field, normalizedOperator, rawValues)
+		if err != nil {
+			return nil, nil, fmt.Errorf("filter %q: %w", key, err)
+		}
+
+		appliedFilters = append(appliedFilters, gin.H{
+			"field":    field.FieldName,
+			"operator": normalizedOperator,
+			"value":    rawValues,
+		})
+	}
+
+	return filteredQuery, appliedFilters, nil
+}
+
+func applyResourceSearch(tx *gorm.DB, docType *models.DocType, rawSearch string) (*gorm.DB, string) {
+	search := strings.TrimSpace(rawSearch)
+	if search == "" {
+		return tx, ""
+	}
+
+	searchableColumns := models.SearchableColumns(docType)
+	if len(searchableColumns) == 0 {
+		return tx, search
+	}
+
+	clauses := make([]string, 0, len(searchableColumns))
+	values := make([]any, 0, len(searchableColumns))
+	pattern := "%" + search + "%"
+	for _, column := range searchableColumns {
+		clauses = append(clauses, fmt.Sprintf("CAST(%s AS TEXT) ILIKE ?", column))
+		values = append(values, pattern)
+	}
+
+	return tx.Where("("+strings.Join(clauses, " OR ")+")", values...), search
+}
+
+func normalizeResourceSort(docType *models.DocType, rawSortBy, rawSortOrder string) (string, error) {
+	sortBy := strings.TrimSpace(rawSortBy)
+	if sortBy == "" {
+		return "updated_at DESC, id DESC", nil
+	}
+
+	field, ok := models.QueryableField(docType, sortBy)
+	if !ok {
+		return "", fmt.Errorf("field %q cannot be used for sorting", sortBy)
+	}
+
+	if !models.IsSortableField(field) {
+		return "", fmt.Errorf("field %q cannot be used for sorting", field.FieldName)
+	}
+
+	direction := strings.ToUpper(strings.TrimSpace(rawSortOrder))
+	if direction == "" {
+		direction = "ASC"
+	}
+
+	if direction != "ASC" && direction != "DESC" {
+		return "", fmt.Errorf("sort_order must be ASC or DESC")
+	}
+
+	return fmt.Sprintf("%s %s, id DESC", field.FieldName, direction), nil
+}
+
+func parseFilterKey(rawKey string) (string, string) {
+	trimmed := strings.TrimPrefix(strings.ToLower(strings.TrimSpace(rawKey)), "filter_")
+	parts := strings.SplitN(trimmed, "__", 2)
+	fieldName := strings.TrimSpace(parts[0])
+	operator := "eq"
+	if len(parts) == 2 && strings.TrimSpace(parts[1]) != "" {
+		operator = strings.TrimSpace(parts[1])
+	}
+
+	return fieldName, operator
+}
+
+func normalizeFilterOperator(operator string) (string, error) {
+	switch strings.ToLower(strings.TrimSpace(operator)) {
+	case "eq", "ne", "gt", "gte", "lt", "lte", "like", "ilike", "in", "isnull":
+		return strings.ToLower(strings.TrimSpace(operator)), nil
+	default:
+		return "", fmt.Errorf("unsupported operator %q", operator)
+	}
+}
+
+func applyFilterCondition(tx *gorm.DB, field models.DocField, operator string, rawValues []string) (*gorm.DB, error) {
+	if len(rawValues) == 0 {
+		return nil, fmt.Errorf("requires a value")
+	}
+
+	column := field.FieldName
+	combinedValue := strings.TrimSpace(rawValues[0])
+
+	switch operator {
+	case "eq":
+		value, err := models.CoerceFieldValue(field, combinedValue)
+		if err != nil {
+			return nil, err
+		}
+		return tx.Where(fmt.Sprintf("%s = ?", column), value), nil
+	case "ne":
+		value, err := models.CoerceFieldValue(field, combinedValue)
+		if err != nil {
+			return nil, err
+		}
+		return tx.Where(fmt.Sprintf("%s <> ?", column), value), nil
+	case "gt", "gte", "lt", "lte":
+		value, err := models.CoerceFieldValue(field, combinedValue)
+		if err != nil {
+			return nil, err
+		}
+		comparisonOperator := map[string]string{"gt": ">", "gte": ">=", "lt": "<", "lte": "<="}[operator]
+		return tx.Where(fmt.Sprintf("%s %s ?", column, comparisonOperator), value), nil
+	case "like", "ilike":
+		if !models.IsTextLikeFieldType(field.FieldType) && field.FieldName != "name" {
+			return nil, fmt.Errorf("supports only text-like fields")
+		}
+		comparisonOperator := strings.ToUpper(operator)
+		return tx.Where(fmt.Sprintf("CAST(%s AS TEXT) %s ?", column, comparisonOperator), "%"+combinedValue+"%"), nil
+	case "in":
+		items := splitAndTrimCSV(combinedValue)
+		if len(items) == 0 {
+			return nil, fmt.Errorf("requires a comma-separated value list")
+		}
+
+		coercedValues := make([]any, 0, len(items))
+		for _, item := range items {
+			value, err := models.CoerceFieldValue(field, item)
+			if err != nil {
+				return nil, err
+			}
+			coercedValues = append(coercedValues, value)
+		}
+
+		return tx.Where(fmt.Sprintf("%s IN ?", column), coercedValues), nil
+	case "isnull":
+		shouldBeNull, err := parseFlexibleBool(combinedValue)
+		if err != nil {
+			return nil, err
+		}
+		if shouldBeNull {
+			return tx.Where(fmt.Sprintf("%s IS NULL", column)), nil
+		}
+		return tx.Where(fmt.Sprintf("%s IS NOT NULL", column)), nil
+	default:
+		return nil, fmt.Errorf("unsupported operator %q", operator)
+	}
+}
+
+func splitAndTrimCSV(raw string) []string {
+	parts := strings.Split(raw, ",")
+	values := make([]string, 0, len(parts))
+	for _, part := range parts {
+		trimmed := strings.TrimSpace(part)
+		if trimmed == "" {
+			continue
+		}
+		values = append(values, trimmed)
+	}
+	return values
+}
+
+func parseFlexibleBool(raw string) (bool, error) {
+	switch strings.ToLower(strings.TrimSpace(raw)) {
+	case "1", "true", "yes", "y", "on":
+		return true, nil
+	case "0", "false", "no", "n", "off":
+		return false, nil
+	default:
+		return false, fmt.Errorf("must be a boolean")
+	}
 }

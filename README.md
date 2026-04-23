@@ -16,7 +16,7 @@ It takes inspiration from systems like Frappe and Odoo, but follows a Go-first a
 
 - **Backend:** Go + Gin + GORM
 - **Database:** PostgreSQL
-- **Frontend:** React + Tailwind CSS (planned consumer for metadata-driven UI rendering)
+- **Frontend:** React + Tailwind CSS (live studio scaffold under `frontend/`)
 - **Architecture:** Metadata-driven MVC
 
 ## Current Features
@@ -47,6 +47,10 @@ gogal-framework/
 ├── controllers/
 │   ├── doctype_controller.go
 │   └── resource_controller.go
+├── frontend/
+│   ├── src/
+│   ├── package.json
+│   └── vite.config.js
 ├── models/
 │   ├── doctype.go
 │   └── resource.go
@@ -99,6 +103,30 @@ The API starts on:
 
 - `http://127.0.0.1:8080`
 
+### Run the React studio
+
+In a second terminal:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+The frontend starts on:
+
+- `http://127.0.0.1:5173`
+
+By default, Vite proxies `/api` requests to `http://127.0.0.1:8080`.
+
+### Current frontend capabilities
+
+- browse live doctypes from the Go backend
+- inspect metadata and field definitions
+- search, sort, and filter live records
+- create records with a metadata-driven dynamic form
+- view query examples for each selected doctype
+
 ## Example: Create a DocType
 
 ```json
@@ -125,7 +153,6 @@ The API starts on:
 ## Roadmap
 
 - Single DocType storage model
-- Dynamic filtering, sorting, and search
 - Role-based permissions and access control
 - Workflow engine
 - Background jobs and scheduler

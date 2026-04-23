@@ -13,6 +13,13 @@ import (
 
 const documentNameMaxLength = 140
 
+var systemQueryFields = map[string]DocField{
+	"id":         {FieldName: "id", FieldType: "Int", Label: "ID"},
+	"name":       {FieldName: "name", FieldType: "Data", Label: "Name"},
+	"created_at": {FieldName: "created_at", FieldType: "Datetime", Label: "Created At"},
+	"updated_at": {FieldName: "updated_at", FieldType: "Datetime", Label: "Updated At"},
+}
+
 func PrepareDocumentPayload(docType *DocType, payload map[string]any, isCreate bool) (map[string]any, error) {
 	fieldMap := make(map[string]DocField, len(docType.Fields))
 	for _, field := range docType.Fields {
@@ -137,6 +144,45 @@ func DocumentSelectColumns(docType *DocType) []string {
 	}
 
 	return columns
+}
+
+func QueryableField(docType *DocType, fieldName string) (DocField, bool) {
+	normalizedFieldName := NormalizeIdentifier(fieldName)
+	if field, ok := systemQueryFields[normalizedFieldName]; ok {
+		return field, true
+	}
+
+	for _, field := range docType.Fields {
+		if field.FieldName == normalizedFieldName {
+			return field, true
+		}
+	}
+
+	return DocField{}, false
+}
+
+func SearchableColumns(docType *DocType) []string {
+	columns := []string{"name"}
+	for _, field := range docType.Fields {
+		if IsTextLikeFieldType(field.FieldType) {
+			columns = append(columns, field.FieldName)
+		}
+	}
+
+	return columns
+}
+
+func IsTextLikeFieldType(fieldType string) bool {
+	switch fieldType {
+	case "Data", "Text", "Small Text", "Long Text", "Select", "Link", "DynamicLink":
+		return true
+	default:
+		return false
+	}
+}
+
+func IsSortableField(field DocField) bool {
+	return field.FieldType != "JSON"
 }
 
 func isEmptyValue(value any) bool {

@@ -19,3 +19,8 @@ coverage.out
 Thumbs.db
 .idea/
 .vscode/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
