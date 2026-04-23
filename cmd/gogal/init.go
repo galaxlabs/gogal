@@ -61,6 +61,7 @@ This command is idempotent. Running it again updates missing directories and mer
 			cmd.Println("  1. cd into the bench directory")
 			cmd.Println("  2. run `gogal new-app <app-name>` to scaffold your first installable module package")
 			cmd.Println("  3. run `gogal new-site <site-name>` to create your first tenant")
+			cmd.Println("  4. run `gogal install-app <app-name> --site <site-name>` to attach the app to that tenant")
 
 			return nil
 		},

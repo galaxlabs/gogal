@@ -150,6 +150,16 @@ This creates an installable app package under `apps/sales/` with:
 go run ./cmd/gogal new-site site1.local --bench ./my-bench --skip-db-setup --no-input
 ```
 
+### Install an app on a site
+
+```bash
+go run ./cmd/gogal install-app sales --bench ./my-bench --site site1.local
+```
+
+This updates the site's `site_config.json` with an `installed_apps` list and writes a per-site registry entry under `sites/<site>/apps/` so installed app state is explicit and inspectable.
+
+At the current foundation stage, `install-app` registers the app on the site and persists installation metadata. Automatic DocType import, migrations, and hook execution will be layered in next.
+
 ### Current frontend capabilities
 
 - browse live doctypes from the Go backend

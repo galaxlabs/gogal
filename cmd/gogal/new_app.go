@@ -189,16 +189,16 @@ func createApp(cmd *cobra.Command, rawAppName string, options *newAppOptions) (*
 	}
 
 	files := map[string]string{
-		filepath.Join(appPath, "README.md"):                                  appREADMEContents(manifest),
-		filepath.Join(appPath, "backend", "controllers", "doc.go"):       backendDocContents("controllers", title),
-		filepath.Join(appPath, "backend", "hooks", "doc.go"):             backendDocContents("hooks", title),
-		filepath.Join(appPath, "backend", "services", "doc.go"):          backendDocContents("services", title),
-		filepath.Join(appPath, "backend", "hooks", "app_hooks.go"):      appHooksContents(title),
-		filepath.Join(appPath, "frontend", "src", "index.js"):           frontendEntryContents(manifest),
-		filepath.Join(appPath, "frontend", "src", "pages", "HomePage.jsx"): homePageContents(title, description),
+		filepath.Join(appPath, "README.md"):                                    appREADMEContents(manifest),
+		filepath.Join(appPath, "backend", "controllers", "doc.go"):             backendDocContents("controllers", title),
+		filepath.Join(appPath, "backend", "hooks", "doc.go"):                   backendDocContents("hooks", title),
+		filepath.Join(appPath, "backend", "services", "doc.go"):                backendDocContents("services", title),
+		filepath.Join(appPath, "backend", "hooks", "app_hooks.go"):             appHooksContents(title),
+		filepath.Join(appPath, "frontend", "src", "index.js"):                  frontendEntryContents(manifest),
+		filepath.Join(appPath, "frontend", "src", "pages", "HomePage.jsx"):     homePageContents(title, description),
 		filepath.Join(appPath, "frontend", "src", "components", "AppCard.jsx"): appCardContents(),
-		filepath.Join(appPath, "frontend", "src", "lib", "routes.js"): frontendRoutesContents(manifest),
-		filepath.Join(appPath, "modules", moduleSlug, "module.json"):      moduleManifestContents(moduleSlug, moduleLabel),
+		filepath.Join(appPath, "frontend", "src", "lib", "routes.js"):          frontendRoutesContents(manifest),
+		filepath.Join(appPath, "modules", moduleSlug, "module.json"):           moduleManifestContents(moduleSlug, moduleLabel),
 	}
 
 	for path, content := range files {

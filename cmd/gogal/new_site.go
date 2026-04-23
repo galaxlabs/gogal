@@ -26,11 +26,12 @@ var (
 )
 
 type siteConfig struct {
-	DBName     string `json:"db_name"`
-	DBUser     string `json:"db_user"`
-	DBPassword string `json:"db_password"`
-	DBHost     string `json:"db_host"`
-	DBPort     int    `json:"db_port"`
+	DBName        string   `json:"db_name"`
+	DBUser        string   `json:"db_user"`
+	DBPassword    string   `json:"db_password"`
+	DBHost        string   `json:"db_host"`
+	DBPort        int      `json:"db_port"`
+	InstalledApps []string `json:"installed_apps,omitempty"`
 }
 
 type newSiteOptions struct {
@@ -339,6 +340,9 @@ func mergeSiteConfig(target, existing *siteConfig) {
 	}
 	if existing.DBPort != 0 {
 		target.DBPort = existing.DBPort
+	}
+	if len(existing.InstalledApps) > 0 {
+		target.InstalledApps = normalizeUniqueStrings(existing.InstalledApps)
 	}
 }
 
