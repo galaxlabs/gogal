@@ -1,0 +1,29 @@
+{{ define "doctype_list.html" }}
+<section>
+  <div class="page-header">
+    <div><h2>DocTypes</h2><p class="muted">Manage metadata entities for Gogal apps/modules.</p></div>
+    <button class="btn btn-primary" hx-get="/desk/doctypes/new" hx-target="#app-content" hx-swap="innerHTML">New DocType</button>
+  </div>
+  <div class="card">
+    <table class="table">
+      <thead><tr><th>DocType</th><th>Module</th><th>Table</th><th>Actions</th></tr></thead>
+      <tbody>
+      {{ range .doctypes }}
+        <tr>
+          <td>{{ .Name }}</td>
+          <td>{{ .Module }}</td>
+          <td>{{ .StorageTable }}</td>
+          <td>
+            <a hx-get="/desk/doctypes/{{ .Name }}" hx-target="#app-content" hx-swap="innerHTML">Edit</a>
+            <span> | </span>
+            <a hx-get="/desk/resource/{{ .Name }}" hx-target="#app-content" hx-swap="innerHTML">Records</a>
+          </td>
+        </tr>
+      {{ else }}
+        <tr><td colspan="4">No DocTypes yet.</td></tr>
+      {{ end }}
+      </tbody>
+    </table>
+  </div>
+</section>
+{{ end }}

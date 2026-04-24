@@ -1,0 +1,25 @@
+{{ define "record_list.html" }}
+<section>
+  <div class="page-header">
+    <div><h2>{{ .doctype }} Records</h2><p class="muted">Metadata-driven list view.</p></div>
+    <button class="btn btn-primary" hx-get="/desk/resource/{{ .doctype }}/new" hx-target="#app-content" hx-swap="innerHTML">New Record</button>
+  </div>
+  {{ if .error }}<div class="alert alert-error">{{ .error }}</div>{{ end }}
+  <div class="card">
+    <table class="table">
+      <thead><tr><th>Name</th><th>Updated At</th><th>Actions</th></tr></thead>
+      <tbody>
+      {{ range .rows }}
+        <tr>
+          <td>{{ index . "name" }}</td>
+          <td>{{ index . "updated_at" }}</td>
+          <td><a hx-get="/desk/resource/{{ $.doctype }}/{{ index . "name" }}" hx-target="#app-content" hx-swap="innerHTML">Edit</a></td>
+        </tr>
+      {{ else }}
+        <tr><td colspan="3">No records yet.</td></tr>
+      {{ end }}
+      </tbody>
+    </table>
+  </div>
+</section>
+{{ end }}

@@ -1,0 +1,13 @@
+{{ define "partials/topbar.html" }}
+<header class="desk-topbar">
+  <div class="topbar-left">
+    <span class="crumb">Gogal Platform</span>
+    <span class="crumb-sep">/</span>
+    <span class="crumb">Desk</span>
+  </div>
+  <div class="topbar-right">
+    <input class="search-input" placeholder="Search or type a command" />
+    <button class="btn btn-primary" hx-get="/desk/doctypes/new" hx-target="#app-content" hx-swap="innerHTML">Quick Create</button>
+  </div>
+</header>
+{{ end }}

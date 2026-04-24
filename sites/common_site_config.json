@@ -1,0 +1,6 @@
+{
+  "db_host": "127.0.0.1",
+  "db_port": 5432,
+  "base_port": 8080,
+  "developer_mode": true
+}

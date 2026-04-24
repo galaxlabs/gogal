@@ -1,0 +1,12 @@
+{{ define "apps.html" }}
+<section>
+  <div class="page-header"><h2>Apps</h2><button class="btn" disabled>New App (UI later)</button></div>
+  <div class="card">
+    {{ if .apps }}
+      <ul class="simple-list">{{ range .apps }}<li>{{ . }}</li>{{ end }}</ul>
+    {{ else }}
+      <p class="muted">No apps found.</p>
+    {{ end }}
+  </div>
+</section>
+{{ end }}

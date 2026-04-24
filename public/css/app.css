@@ -1,0 +1,62 @@
+:root {
+  --bg: #f5f7fb;
+  --surface: #ffffff;
+  --sidebar: #111827;
+  --line: #d9dee8;
+  --text: #1f2937;
+  --muted: #6b7280;
+  --brand: #2563eb;
+}
+* { box-sizing: border-box; }
+body { margin: 0; font-family: "Nunito Sans", "Segoe UI", sans-serif; background: var(--bg); color: var(--text); }
+a { color: #2563eb; text-decoration: none; }
+.desk-shell { display: flex; min-height: 100vh; }
+.desk-sidebar { width: 240px; background: var(--sidebar); color: #e5e7eb; padding: 18px 14px; display: grid; align-content: start; gap: 8px; }
+.desk-sidebar .brand { color: #fff; font-weight: 800; margin-bottom: 10px; letter-spacing: .03em; }
+.desk-sidebar a { color: #cbd5e1; padding: 9px 10px; border-radius: 8px; font-weight: 600; }
+.desk-sidebar a:hover { background: rgba(255,255,255,.08); }
+.desk-main { flex: 1; display: flex; flex-direction: column; }
+.desk-topbar { background: var(--surface); border-bottom: 1px solid var(--line); padding: 10px 18px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.topbar-left { display: flex; align-items: center; gap: 8px; }
+.crumb { color: #4b5563; font-weight: 700; }
+.crumb-sep { color: #9ca3af; }
+.topbar-right { display: flex; gap: 8px; align-items: center; }
+.search-input { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-width: 240px; }
+.desk-content { padding: 18px; }
+.page-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
+.page-header.compact { margin-bottom: 10px; }
+.page-header h2 { margin: 0; font-size: 24px; }
+.page-header h3 { margin: 0; font-size: 18px; }
+.muted { color: var(--muted); margin-top: 4px; }
+.card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; box-shadow: 0 6px 18px rgba(0,0,0,.03); }
+.btn { border: 1px solid var(--line); border-radius: 8px; background: #fff; padding: 8px 12px; font-weight: 700; cursor: pointer; }
+.btn:disabled { opacity: .6; cursor: not-allowed; }
+.btn-primary { border-color: #1d4ed8; background: var(--brand); color: #fff; }
+.table { width: 100%; border-collapse: collapse; }
+.table th, .table td { border-bottom: 1px solid #edf0f5; padding: 10px 8px; text-align: left; font-size: 14px; }
+.builder-grid { display: grid; grid-template-columns: 1.1fr 1.3fr 1fr; gap: 12px; }
+label { display: grid; gap: 4px; margin-bottom: 10px; font-size: 13px; font-weight: 700; }
+input, textarea, select { width: 100%; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font: inherit; }
+.inline-checks { display: flex; gap: 12px; }
+.field-rows { display: grid; gap: 8px; min-height: 110px; }
+.field-row { border: 1px solid var(--line); border-radius: 10px; background: #fbfcfe; padding: 10px; display: grid; grid-template-columns: 1.2fr 1fr 1fr auto; gap: 8px; align-items: end; }
+.field-row .drag { cursor: grab; padding: 8px; color: #6b7280; }
+.form-layout { display: grid; grid-template-columns: 1.4fr .8fr; gap: 12px; }
+.form-field { margin-bottom: 10px; }
+.alert { border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; }
+.alert-error { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; }
+.alert-success { background: #ecfdf5; border: 1px solid #bbf7d0; color: #166534; }
+.json-box { background: #0f172a; color: #dbeafe; border-radius: 10px; padding: 10px; min-height: 140px; white-space: pre-wrap; }
+.button-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.simple-list { margin: 0; padding-left: 18px; }
+.child-table-placeholder { border: 1px dashed var(--line); padding: 10px; color: var(--muted); border-radius: 8px; }
+@media (max-width: 1024px) {
+  .desk-sidebar { width: 200px; }
+  .builder-grid, .form-layout { grid-template-columns: 1fr; }
+}
+@media (max-width: 760px) {
+  .desk-shell { flex-direction: column; }
+  .desk-sidebar { width: 100%; grid-template-columns: repeat(3,minmax(0,1fr)); }
+  .search-input { min-width: 140px; }
+}

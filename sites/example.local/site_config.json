@@ -1,0 +1,8 @@
+{
+  "site_name": "example.local",
+  "db_name": "gogaldb",
+  "db_user": "gogaluser",
+  "db_password": "gogal123",
+  "db_host": "127.0.0.1",
+  "db_port": 5432
+}

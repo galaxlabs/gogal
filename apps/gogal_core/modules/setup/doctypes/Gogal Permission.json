@@ -1,0 +1,8 @@
+{
+  "doctype": "Gogal Permission",
+  "module": "setup",
+  "fields": [
+    {"fieldname": "role", "fieldtype": "Link", "options": "Gogal Role", "label": "Role", "reqd": true},
+    {"fieldname": "doctype_ref", "fieldtype": "Data", "label": "DocType", "reqd": true}
+  ]
+}

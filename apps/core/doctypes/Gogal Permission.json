@@ -1,0 +1,9 @@
+{
+  "doctype": "Gogal Permission",
+  "module": "Core",
+  "table_name": "tab_permissions",
+  "fields": [
+    {"fieldname": "role", "fieldtype": "Link", "options": "Gogal Role", "label": "Role", "reqd": true},
+    {"fieldname": "doctype_ref", "fieldtype": "Link", "options": "Gogal DocType", "label": "DocType", "reqd": true}
+  ]
+}

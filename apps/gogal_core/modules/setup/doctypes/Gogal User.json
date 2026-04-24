@@ -1,0 +1,8 @@
+{
+  "doctype": "Gogal User",
+  "module": "setup",
+  "fields": [
+    {"fieldname": "email", "fieldtype": "Data", "label": "Email", "reqd": true, "unique": true},
+    {"fieldname": "full_name", "fieldtype": "Data", "label": "Full Name"}
+  ]
+}

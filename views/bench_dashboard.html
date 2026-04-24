@@ -1,0 +1,24 @@
+{{ define "bench_dashboard.html" }}
+<section>
+  <div class="page-header">
+    <div><h2>Gogal Bench Manager</h2><p class="muted">CLI-first today, Desk-managed workflows later.</p></div>
+  </div>
+  <div class="card-grid">
+    <article class="card"><h3>Bench</h3><p>{{ .status.BenchRoot }}</p></article>
+    <article class="card"><h3>Sites</h3><p>{{ len .status.Sites }} detected</p></article>
+    <article class="card"><h3>Apps</h3><p>{{ len .status.Apps }} detected</p></article>
+  </div>
+  <div class="card">
+    <h3>Operations (MVP skeleton)</h3>
+    <div class="button-row">
+      <button class="btn" disabled>New Site</button>
+      <button class="btn" disabled>Install App</button>
+      <button class="btn" disabled>Run Migration Plan</button>
+      <button class="btn" disabled>Backup</button>
+      <button class="btn" disabled>Restore</button>
+      <button class="btn" disabled>Add Domain</button>
+      <button class="btn" disabled>Generate Random Subdomain</button>
+    </div>
+  </div>
+</section>
+{{ end }}

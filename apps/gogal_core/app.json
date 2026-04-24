@@ -1,0 +1,7 @@
+{
+  "name": "gogal_core",
+  "title": "Gogal Core",
+  "version": "0.1.0",
+  "description": "Core installable app for Gogal Platform.",
+  "modules": ["setup", "desk"]
+}

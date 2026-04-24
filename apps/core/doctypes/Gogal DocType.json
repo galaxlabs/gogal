@@ -1,0 +1,10 @@
+{
+  "doctype": "Gogal DocType",
+  "module": "Core",
+  "table_name": "tab_doctypes",
+  "fields": [
+    {"fieldname": "name", "fieldtype": "Data", "label": "Name", "reqd": true, "unique": true},
+    {"fieldname": "module", "fieldtype": "Data", "label": "Module", "reqd": true},
+    {"fieldname": "table_name", "fieldtype": "Data", "label": "Table Name", "reqd": true}
+  ]
+}

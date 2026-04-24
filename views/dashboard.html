@@ -1,0 +1,16 @@
+{{ define "dashboard.html" }}
+<section>
+  <div class="page-header">
+    <div>
+      <h2>Workspace</h2>
+      <p class="muted">Frappe v16 inspired Desk shell for Gogal Studio.</p>
+    </div>
+    <button class="btn btn-primary" hx-get="/desk/doctypes/new" hx-target="#app-content" hx-swap="innerHTML">New DocType</button>
+  </div>
+  <div class="card-grid">
+    <article class="card"><h3>DocType Builder</h3><p>Create metadata and generate tables.</p></article>
+    <article class="card"><h3>Dynamic CRUD</h3><p>Resource API auto-drives list/form pages.</p></article>
+    <article class="card"><h3>Bench Manager</h3><p>Site/app/proxy controls are scaffolded.</p></article>
+  </div>
+</section>
+{{ end }}

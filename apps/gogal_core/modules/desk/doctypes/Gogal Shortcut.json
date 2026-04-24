@@ -1,0 +1,8 @@
+{
+  "doctype": "Gogal Shortcut",
+  "module": "desk",
+  "fields": [
+    {"fieldname": "label", "fieldtype": "Data", "label": "Label", "reqd": true},
+    {"fieldname": "route", "fieldtype": "Data", "label": "Route", "reqd": true}
+  ]
+}

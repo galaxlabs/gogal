@@ -1,0 +1,8 @@
+{
+  "doctype": "Gogal Workspace",
+  "module": "desk",
+  "fields": [
+    {"fieldname": "title", "fieldtype": "Data", "label": "Title", "reqd": true},
+    {"fieldname": "icon", "fieldtype": "Data", "label": "Icon"}
+  ]
+}

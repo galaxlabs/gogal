@@ -1,0 +1,11 @@
+{
+  "doctype": "Gogal Field",
+  "module": "Core",
+  "table_name": "tab_docfields",
+  "is_child_table": true,
+  "fields": [
+    {"fieldname": "field_name", "fieldtype": "Data", "label": "Field Name", "reqd": true},
+    {"fieldname": "field_type", "fieldtype": "Select", "label": "Field Type", "reqd": true},
+    {"fieldname": "required", "fieldtype": "Check", "label": "Required"}
+  ]
+}

@@ -1,0 +1,12 @@
+{{ define "modules.html" }}
+<section>
+  <div class="page-header"><h2>Modules</h2><button class="btn" disabled>New Module (UI later)</button></div>
+  <div class="card">
+    {{ if .modules }}
+      <ul class="simple-list">{{ range .modules }}<li>{{ . }}</li>{{ end }}</ul>
+    {{ else }}
+      <p class="muted">No modules found.</p>
+    {{ end }}
+  </div>
+</section>
+{{ end }}

@@ -1,0 +1,7 @@
+{
+  "doctype": "Gogal Role",
+  "module": "setup",
+  "fields": [
+    {"fieldname": "role_name", "fieldtype": "Data", "label": "Role Name", "reqd": true, "unique": true}
+  ]
+}

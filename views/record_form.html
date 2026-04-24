@@ -1,0 +1,45 @@
+{{ define "record_form.html" }}
+<section class="record-form-page" data-doctype="{{ .doctype }}" data-record-id="{{ .record_id }}" data-is-new="{{ .is_new }}">
+  <div class="page-header">
+    <div><h2>{{ .doctype }} Form</h2><p class="muted">Metadata-driven form renderer (MVP widgets).</p></div>
+    <button id="record-save-btn" class="btn btn-primary">Save</button>
+  </div>
+  {{ if .error }}<div class="alert alert-error">{{ .error }}</div>{{ end }}
+  <div class="form-layout">
+    <div class="card" id="dynamic-form-fields">
+      {{ range .fields }}
+      <div class="form-field" data-fieldtype="{{ .FieldType }}" data-fieldname="{{ .FieldName }}" data-required="{{ .Required }}" data-options="{{ .RawOptions }}">
+        <label>{{ .Label }}{{ if .Required }} *{{ end }}</label>
+        {{ if eq .FieldType "Text" }}
+          <textarea data-input="{{ .FieldName }}" rows="3">{{ index $.record .FieldName }}</textarea>
+        {{ else if or (eq .FieldType "Select") }}
+          <select data-input="{{ .FieldName }}">
+            <option value="">Select</option>
+            {{ range .Options }}<option value="{{ . }}">{{ . }}</option>{{ end }}
+          </select>
+        {{ else if eq .FieldType "Link" }}
+          <input type="text" data-input="{{ .FieldName }}" data-link-target="{{ .RawOptions }}" placeholder="Link: {{ .RawOptions }}" value="{{ index $.record .FieldName }}" />
+        {{ else if eq .FieldType "Check" }}
+          <input type="checkbox" data-input="{{ .FieldName }}" {{ if index $.record .FieldName }}checked{{ end }} />
+        {{ else if eq .FieldType "Date" }}
+          <input type="date" data-input="{{ .FieldName }}" value="{{ index $.record .FieldName }}" />
+        {{ else if eq .FieldType "Datetime" }}
+          <input type="datetime-local" data-input="{{ .FieldName }}" value="{{ index $.record .FieldName }}" />
+        {{ else if or (eq .FieldType "Int") (eq .FieldType "Float") (eq .FieldType "Currency") }}
+          <input type="number" step="any" data-input="{{ .FieldName }}" value="{{ index $.record .FieldName }}" />
+        {{ else if eq .FieldType "Table" }}
+          <div class="child-table-placeholder">Child Table UI placeholder (MVP)</div>
+        {{ else }}
+          <input type="text" data-input="{{ .FieldName }}" value="{{ index $.record .FieldName }}" />
+        {{ end }}
+      </div>
+      {{ end }}
+    </div>
+    <aside class="card">
+      <h3>Timeline</h3>
+      <p class="muted">Audit timeline placeholder.</p>
+      <div id="record-save-result"></div>
+    </aside>
+  </div>
+</section>
+{{ end }}

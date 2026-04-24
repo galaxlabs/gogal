@@ -20,12 +20,9 @@ var DB *gorm.DB
 func ConnectDB() error {
 	_ = godotenv.Load()
 
-	dsn := buildDSN()
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Warn),
-	})
+	db, err := OpenWithDSN(buildDSN())
 	if err != nil {
-		return fmt.Errorf("connect database: %w", err)
+		return err
 	}
 
 	sqlDB, err := db.DB()
@@ -52,6 +49,16 @@ func ConnectDB() error {
 	DB = db
 	log.Println("database connected and metadata tables are ready")
 	return nil
+}
+
+func OpenWithDSN(dsn string) (*gorm.DB, error) {
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Warn),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("connect database: %w", err)
+	}
+	return db, nil
 }
 
 func buildDSN() string {

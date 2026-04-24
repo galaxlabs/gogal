@@ -1,0 +1,10 @@
+{{ define "partials/sidebar.html" }}
+<aside class="desk-sidebar">
+  <div class="brand">Gogal Desk</div>
+  <a hx-get="/desk/dashboard" hx-target="#app-content" hx-swap="innerHTML">Workspace</a>
+  <a hx-get="/desk/apps" hx-target="#app-content" hx-swap="innerHTML">Apps</a>
+  <a hx-get="/desk/modules" hx-target="#app-content" hx-swap="innerHTML">Modules</a>
+  <a hx-get="/desk/doctypes" hx-target="#app-content" hx-swap="innerHTML">DocTypes</a>
+  <a hx-get="/desk/bench" hx-target="#app-content" hx-swap="innerHTML">Bench Manager</a>
+</aside>
+{{ end }}
