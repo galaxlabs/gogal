@@ -81,7 +81,7 @@ type DocType struct {
 	IsSingle       bool           `gorm:"default:false" json:"is_single"`
 	IsChildTable   bool           `gorm:"column:is_child_table;default:false" json:"is_child_table"`
 	IsSystem       bool           `gorm:"default:false" json:"is_system"`
-	TrackChanges   bool           `gorm:"default:true" json:"track_changes"`
+	TrackChanges   bool           `json:"track_changes"`
 	AllowRename    bool           `gorm:"default:true" json:"allow_rename"`
 	QuickEntry     bool           `gorm:"default:false" json:"quick_entry"`
 	MaxAttachments int            `gorm:"default:0" json:"max_attachments"`

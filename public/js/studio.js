@@ -220,7 +220,19 @@
           result.innerHTML = '<div class="alert alert-error">Save failed: ' + (res.body.error && res.body.error.message ? res.body.error.message : JSON.stringify(res.body)) + '</div>';
           return;
         }
+        var savedName = res.body && res.body.data && res.body.data.name ? res.body.data.name : recordID;
+        if (isNew && savedName && window.htmx) {
+          window.htmx.ajax('GET', '/desk/resource/' + encodeURIComponent(doctype) + '/' + encodeURIComponent(savedName), {
+            target: '#app-content',
+            swap: 'innerHTML'
+          });
+          return;
+        }
         result.innerHTML = '<div class="alert alert-success">Record saved. <a hx-get="/desk/resource/' + doctype + '" hx-target="#app-content" hx-swap="innerHTML">Back to list</a></div>';
+        var timeline = root.querySelector('#record-timeline');
+        if (timeline && window.htmx && timeline.getAttribute('hx-get')) {
+          window.htmx.ajax('GET', timeline.getAttribute('hx-get'), { target: timeline, swap: 'innerHTML' });
+        }
       }).catch(function (e) {
         result.innerHTML = '<div class="alert alert-error">Save failed: ' + e + '</div>';
       });
@@ -254,11 +266,39 @@
     });
   }
 
+  function setupRecordList() {
+    document.querySelectorAll('[data-select-all]').forEach(function (input) {
+      if (input.dataset.bound === '1') return;
+      input.dataset.bound = '1';
+      input.addEventListener('change', function () {
+        var table = input.closest('table');
+        if (!table) return;
+        table.querySelectorAll('[data-record-select]').forEach(function (checkbox) {
+          checkbox.checked = input.checked;
+        });
+      });
+    });
+  }
+
   function boot() {
     setupBuilder();
     setupRecordForm();
+    setupRecordList();
   }
 
   document.addEventListener('DOMContentLoaded', boot);
   document.body.addEventListener('htmx:afterSwap', boot);
+  document.body.addEventListener('htmx:afterRequest', function (event) {
+    if (!event.detail || !event.detail.requestConfig || event.detail.requestConfig.verb !== 'delete') return;
+    var toolbar = document.querySelector('.list-toolbar');
+    if (toolbar && window.htmx) {
+      window.htmx.trigger(toolbar, 'submit');
+    }
+  });
+  document.body.addEventListener('htmx:afterSwap', function (event) {
+    if (!event.target || event.target.id !== 'record-timeline') return;
+    document.querySelectorAll('.comment-form textarea, .assignment-form input').forEach(function (input) {
+      input.value = '';
+    });
+  });
 })();

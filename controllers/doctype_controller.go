@@ -72,7 +72,9 @@ func CreateDocType(c *gin.Context) {
 			return err
 		}
 
-		if err := tx.Create(docType).Error; err != nil {
+		// Select all fields so explicit false values such as track_changes=false
+		// are persisted instead of being replaced by database defaults.
+		if err := tx.Select("*").Create(docType).Error; err != nil {
 			return err
 		}
 

@@ -5,21 +5,61 @@
     <button class="btn btn-primary" hx-get="/desk/resource/{{ .doctype }}/new" hx-target="#app-content" hx-swap="innerHTML">New Record</button>
   </div>
   {{ if .error }}<div class="alert alert-error">{{ .error }}</div>{{ end }}
+  <form class="list-toolbar"
+        hx-get="/desk/resource/{{ .doctype }}/table"
+        hx-target="#record-list-results"
+        hx-swap="innerHTML"
+        hx-trigger="submit, change delay:250ms from:select, keyup changed delay:350ms from:input[name='search']">
+    <input name="search" value="{{ .search }}" placeholder="Search {{ .doctype }}" />
+    <select name="sort_by">
+      <option value="updated_at" {{ if eq .sort_by "updated_at" }}selected{{ end }}>Updated</option>
+      <option value="created_at" {{ if eq .sort_by "created_at" }}selected{{ end }}>Created</option>
+      <option value="name" {{ if eq .sort_by "name" }}selected{{ end }}>Name</option>
+    </select>
+    <select name="sort_order">
+      <option value="DESC" {{ if eq .sort_order "DESC" }}selected{{ end }}>Newest first</option>
+      <option value="ASC" {{ if eq .sort_order "ASC" }}selected{{ end }}>Oldest first</option>
+    </select>
+    <select name="limit">
+      <option value="20" {{ if eq .limit 20 }}selected{{ end }}>20</option>
+      <option value="50" {{ if eq .limit 50 }}selected{{ end }}>50</option>
+      <option value="100" {{ if eq .limit 100 }}selected{{ end }}>100</option>
+    </select>
+    <button class="btn" type="submit">Apply</button>
+    <button class="btn" type="button" hx-get="/desk/resource/{{ .doctype }}/table" hx-target="#record-list-results" hx-swap="innerHTML">Clear</button>
+  </form>
+  <div id="record-action-result"></div>
+  <div id="record-list-results">
+    {{ template "record_list_table.html" . }}
+  </div>
+</section>
+{{ end }}
+
+{{ define "record_list_table.html" }}
+{{ if .error }}<div class="alert alert-error">{{ .error }}</div>{{ end }}
   <div class="card">
     <table class="table">
-      <thead><tr><th>Name</th><th>Updated At</th><th>Actions</th></tr></thead>
+      <thead><tr><th><input type="checkbox" data-select-all /></th><th>Name</th><th>Updated At</th><th>Actions</th></tr></thead>
       <tbody>
       {{ range .rows }}
         <tr>
+          <td><input type="checkbox" data-record-select value="{{ index . "name" }}" /></td>
           <td>{{ index . "name" }}</td>
           <td>{{ index . "updated_at" }}</td>
-          <td><a hx-get="/desk/resource/{{ $.doctype }}/{{ index . "name" }}" hx-target="#app-content" hx-swap="innerHTML">Edit</a></td>
+          <td>
+            <a hx-get="/desk/resource/{{ $.doctype }}/{{ index . "name" }}" hx-target="#app-content" hx-swap="innerHTML">Edit</a>
+            <span> | </span>
+            <button class="link-button"
+                    hx-delete="/desk/resource/{{ $.doctype }}/{{ index . "name" }}"
+                    hx-target="#record-action-result"
+                    hx-swap="innerHTML"
+                    hx-confirm="Delete this record?">Delete</button>
+          </td>
         </tr>
       {{ else }}
-        <tr><td colspan="3">No records yet.</td></tr>
+        <tr><td colspan="4">No records yet.</td></tr>
       {{ end }}
       </tbody>
     </table>
   </div>
-</section>
 {{ end }}

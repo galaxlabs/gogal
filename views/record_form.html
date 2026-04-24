@@ -36,10 +36,102 @@
       {{ end }}
     </div>
     <aside class="card">
-      <h3>Timeline</h3>
-      <p class="muted">Audit timeline placeholder.</p>
+      <div class="page-header compact">
+        <h3>Activity</h3>
+        <button class="btn" type="button"
+                hx-get="/desk/resource/{{ .doctype }}/{{ if .record_id }}{{ .record_id }}{{ else }}new{{ end }}/timeline"
+                hx-target="#record-timeline"
+                hx-swap="innerHTML">Refresh</button>
+      </div>
+      <div class="activity-composer">
+        {{ if .is_new }}
+          <p class="muted">Save this record to unlock comments, assignments, and activity history.</p>
+        {{ else }}
+          <form class="comment-form"
+                hx-post="/desk/resource/{{ .doctype }}/{{ .record_id }}/comment"
+                hx-target="#record-timeline"
+                hx-swap="innerHTML">
+            <textarea name="comment" rows="3" placeholder="Add a comment..."></textarea>
+            <button class="btn btn-primary" type="submit">Comment</button>
+          </form>
+          <form class="assignment-form"
+                hx-post="/desk/resource/{{ .doctype }}/{{ .record_id }}/assign"
+                hx-target="#record-timeline"
+                hx-swap="innerHTML">
+            <input name="assigned_to" placeholder="Assign to user or email" />
+            <input name="note" placeholder="Optional note" />
+            <button class="btn" type="submit">Assign</button>
+          </form>
+          <p class="muted">Assignments are an MVP placeholder for the future user and permission system.</p>
+        {{ end }}
+      </div>
+      <div id="record-timeline"
+           hx-get="/desk/resource/{{ .doctype }}/{{ if .record_id }}{{ .record_id }}{{ else }}new{{ end }}/timeline"
+           hx-trigger="load"
+           hx-swap="innerHTML">
+        <p class="muted">Loading timeline...</p>
+      </div>
       <div id="record-save-result"></div>
     </aside>
   </div>
 </section>
+{{ end }}
+
+{{ define "timeline.html" }}
+<div class="timeline">
+  {{ range .events }}
+  <div class="timeline-item timeline-{{ .Kind }}">
+    <div class="timeline-line">
+      <strong>{{ .Title }}</strong>
+      {{ if .Badge }}<span class="timeline-badge">{{ .Badge }}</span>{{ end }}
+    </div>
+    <span>{{ .Time.Format "2006-01-02 15:04" }}</span>
+    {{ if .Actor }}<span>by {{ .Actor }}</span>{{ end }}
+    {{ if .Muted }}<span>{{ .Muted }}</span>{{ end }}
+    <p>{{ .Note }}</p>
+    {{ if .Diffs }}
+    <div class="timeline-diffs">
+      {{ range .Diffs }}
+      <div class="timeline-diff">
+        <strong>{{ .Field }}</strong>
+        <span>{{ .Before }}</span>
+        <span>-&gt;</span>
+        <span>{{ .After }}</span>
+      </div>
+      {{ end }}
+    </div>
+    {{ end }}
+    {{ if and .ID (eq .Kind "comment") }}
+    <div class="timeline-actions">
+      <button class="link-button" type="button"
+              hx-post="/desk/resource/{{ $.doctype }}/{{ $.record_id }}/comment/{{ .ID }}/edit"
+              hx-target="#record-save-result"
+              hx-swap="innerHTML">Edit</button>
+      <button class="link-button danger" type="button"
+              hx-post="/desk/resource/{{ $.doctype }}/{{ $.record_id }}/comment/{{ .ID }}/delete"
+              hx-target="#record-timeline"
+              hx-swap="innerHTML"
+              hx-confirm="Delete this comment?">Delete</button>
+    </div>
+    {{ end }}
+    {{ if and .ID (eq .Kind "assignment") }}
+    <div class="timeline-actions">
+      {{ if eq .Muted "closed" }}
+      <button class="link-button" type="button"
+              hx-post="/desk/resource/{{ $.doctype }}/{{ $.record_id }}/assignment/{{ .ID }}/open"
+              hx-target="#record-timeline"
+              hx-swap="innerHTML">Reopen</button>
+      {{ else }}
+      <button class="link-button" type="button"
+              hx-post="/desk/resource/{{ $.doctype }}/{{ $.record_id }}/assignment/{{ .ID }}/closed"
+              hx-target="#record-timeline"
+              hx-swap="innerHTML">Close</button>
+      {{ end }}
+    </div>
+    {{ end }}
+  </div>
+  {{ else }}
+  <p class="muted">No timeline events yet.</p>
+  {{ end }}
+</div>
 {{ end }}

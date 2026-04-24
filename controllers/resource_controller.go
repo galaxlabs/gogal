@@ -6,10 +6,12 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"sort"
 	"strconv"
 	"strings"
 
 	"gogal/config"
+	"gogal/internal/audit"
 	"gogal/models"
 
 	"github.com/gin-gonic/gin"
@@ -178,7 +180,19 @@ func CreateResource(c *gin.Context) {
 			return err
 		}
 
-		return nil
+		if !docType.TrackChanges {
+			return nil
+		}
+		return audit.Record(tx, audit.EventInput{
+			DocType: docType.Name,
+			DocName: recordName,
+			Action:  audit.ActionCreate,
+			Actor:   auditActor(c),
+			Summary: fmt.Sprintf("Created %s %s", docType.Name, recordName),
+			Metadata: map[string]any{
+				"fields": mapKeys(prepared.Values),
+			},
+		})
 	}); err != nil {
 		log.Printf("create record in %s failed: %v", docType.Name, err)
 		jsonError(c, http.StatusBadRequest, "failed_to_create_record", err.Error(), nil)
@@ -237,6 +251,22 @@ func UpdateResource(c *gin.Context) {
 		return
 	}
 
+	before := map[string]any{}
+	if docType.TrackChanges {
+		err := config.DB.Table(docType.StorageTable).
+			Where("name = ? AND deleted_at IS NULL", recordName).
+			Take(&before).Error
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				jsonError(c, http.StatusNotFound, "record_not_found", fmt.Sprintf("Record %q was not found in %q.", recordName, docType.Name), nil)
+				return
+			}
+			jsonError(c, http.StatusInternalServerError, "failed_to_load_record", "Unable to load record before update.", err.Error())
+			return
+		}
+	}
+	diffs := buildFieldDiffs(before, prepared.Values)
+
 	if err := config.DB.Transaction(func(tx *gorm.DB) error {
 		rowsAffected := int64(0)
 		if len(prepared.Values) > 0 {
@@ -270,7 +300,21 @@ func UpdateResource(c *gin.Context) {
 			return gorm.ErrRecordNotFound
 		}
 
-		return nil
+		if !docType.TrackChanges {
+			return nil
+		}
+		return audit.Record(tx, audit.EventInput{
+			DocType: docType.Name,
+			DocName: recordName,
+			Action:  audit.ActionUpdate,
+			Actor:   auditActor(c),
+			Summary: fmt.Sprintf("Updated %s %s", docType.Name, recordName),
+			Metadata: map[string]any{
+				"fields":       mapKeys(prepared.Values),
+				"child_tables": len(prepared.ChildTables),
+				"diffs":        diffs,
+			},
+		})
 	}); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			jsonError(c, http.StatusNotFound, "record_not_found", fmt.Sprintf("Record %q was not found in %q.", recordName, docType.Name), nil)
@@ -326,7 +370,20 @@ func DeleteResource(c *gin.Context) {
 			return gorm.ErrRecordNotFound
 		}
 
-		return deleteAllChildTableRows(tx, docType, recordName)
+		if err := deleteAllChildTableRows(tx, docType, recordName); err != nil {
+			return err
+		}
+
+		if !docType.TrackChanges {
+			return nil
+		}
+		return audit.Record(tx, audit.EventInput{
+			DocType: docType.Name,
+			DocName: recordName,
+			Action:  audit.ActionDelete,
+			Actor:   auditActor(c),
+			Summary: fmt.Sprintf("Deleted %s %s", docType.Name, recordName),
+		})
 	}); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			jsonError(c, http.StatusNotFound, "record_not_found", fmt.Sprintf("Record %q was not found in %q.", recordName, docType.Name), nil)
@@ -536,6 +593,58 @@ func deleteSingleResource(c *gin.Context, docType *models.DocType) {
 		"message": fmt.Sprintf("Single DocType %q reset successfully.", docType.Name),
 		"data":    record,
 	})
+}
+
+func auditActor(c *gin.Context) string {
+	if c == nil {
+		return "system"
+	}
+	for _, key := range []string{"X-Gogal-User", "X-User", "X-Actor"} {
+		if value := strings.TrimSpace(c.GetHeader(key)); value != "" {
+			return value
+		}
+	}
+	return "system"
+}
+
+func mapKeys(values map[string]any) []string {
+	keys := make([]string, 0, len(values))
+	for key := range values {
+		if key == "updated_at" {
+			continue
+		}
+		keys = append(keys, key)
+	}
+	return keys
+}
+
+func buildFieldDiffs(before map[string]any, after map[string]any) []map[string]string {
+	if len(before) == 0 || len(after) == 0 {
+		return nil
+	}
+	keys := mapKeys(after)
+	sort.Strings(keys)
+	diffs := make([]map[string]string, 0, len(keys))
+	for _, key := range keys {
+		beforeValue := displayDiffValue(before[key])
+		afterValue := displayDiffValue(after[key])
+		if beforeValue == afterValue {
+			continue
+		}
+		diffs = append(diffs, map[string]string{
+			"field":  key,
+			"before": beforeValue,
+			"after":  afterValue,
+		})
+	}
+	return diffs
+}
+
+func displayDiffValue(value any) string {
+	if value == nil {
+		return ""
+	}
+	return strings.TrimSpace(fmt.Sprint(value))
 }
 
 func extractOrGenerateRecordName(docType *models.DocType, payload map[string]any) (string, error) {
